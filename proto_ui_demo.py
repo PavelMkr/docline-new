@@ -1,10 +1,14 @@
-import sys, os
+import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QLabel, 
                              QFileDialog, QStackedLayout, QFormLayout, QSlider, QGroupBox, QHBoxLayout, 
                              QCheckBox)
 from PyQt5.QtCore import Qt
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'modes'))
+
+from modes.automatic_mode_demo import page1_func
+from modes.interactive_mode_demo import page2_func
+from modes.ngram_duplicate_finder_demo import page3_func
+from modes.heuristic_ngram_finder_demo import page4_func
 
 class DocLine(QWidget):
     def __init__(self):
@@ -270,85 +274,71 @@ class DocLine(QWidget):
             self.file_path_label.setText(file_name)
             print(f"Chosen file: {file_name}")
 
-    # def start_function(self):
-    #     print("start")
     def start_function(self):
         current_index = self.stackedLayout.currentIndex()
         
         if current_index == 0:  # Page 1 - Automatic mode
-            self.log_page1_values()
+            clone_miner_group = self.page1Layout.itemAt(0).widget()
+            clone_miner_layout = clone_miner_group.layout()
+            
+            length_slider = clone_miner_layout.itemAt(0).layout().itemAt(1).widget()
+
+            filtering_group = clone_miner_layout.itemAt(1).widget()
+            filtering_layout = filtering_group.layout()
+
+            convert_checkbox = filtering_layout.itemAt(0).widget()
+            archetype_slider = filtering_layout.itemAt(1).layout().itemAt(1).widget()
+            strict_filtering_checkbox = filtering_layout.itemAt(2).widget()
+
+            data = {
+                'length_slider': length_slider.value(),
+                'convert_checkbox':convert_checkbox.isChecked(),
+                'archetype_slider': archetype_slider.value(),
+                'strict_filtering_checkbox': strict_filtering_checkbox.isChecked()
+            }
+            page1_func(data)
         elif current_index == 1:  # Page 2 - Interactive mode
-            self.log_page2_values()
+            fuzzy_heat_group = self.page2Layout.itemAt(0).widget()
+            fuzzy_heat_layout = fuzzy_heat_group.layout()
+            
+            min_clone_slider = fuzzy_heat_layout.itemAt(0).layout().itemAt(1).widget()
+            max_clone_slider = fuzzy_heat_layout.itemAt(1).layout().itemAt(1).widget()
+            min_group_slider = fuzzy_heat_layout.itemAt(2).layout().itemAt(1).widget()
+            extension_checkbox = fuzzy_heat_layout.itemAt(3).widget()
+
+            data = {
+                'min_clone_slider': min_clone_slider.value(),
+                'max_clone_slider':max_clone_slider.value(),
+                'min_group_slider': min_group_slider.value(),
+                'extension_checkbox': extension_checkbox.isChecked()
+            }
+            page2_func(data)
         elif current_index == 2:  # Page 3 - Ngram Duplicate Finder
-            self.log_page3_values()
+            fuzzy_finder_group = self.page3Layout.itemAt(0).widget()
+            fuzzy_finder_layout = fuzzy_finder_group.layout()
+            
+            min_clone_slider = fuzzy_finder_layout.itemAt(0).layout().itemAt(1).widget()
+            max_edit_slider = fuzzy_finder_layout.itemAt(1).layout().itemAt(1).widget()
+            max_fuzzy_slider = fuzzy_finder_layout.itemAt(2).layout().itemAt(1).widget()
+            source_language = fuzzy_finder_layout.itemAt(3).layout().itemAt(1).widget()
+
+            data = {
+                'min_clone_slider': min_clone_slider.value(),
+                'max_edit_slider': max_edit_slider.value(),
+                'max_fuzzy_slider': max_fuzzy_slider.value(),
+                'source_language': source_language.currentText()
+            }
+            page3_func(data)
         elif current_index == 3:  # Page 4 - Heuristic Ngram Finder
-            self.log_page4_values()
+            heurestic_duplicate_group = self.page4Layout.itemAt(0).widget()
+            heurestic_duplicate_layout = heurestic_duplicate_group.layout()
+        
+            extention_point_checkbox = heurestic_duplicate_layout.itemAt(0).widget()
 
-    def log_page1_values(self):
-        # Page 1 values
-        print("Page 1 - Automatic mode:")
-        clone_miner_group = self.page1Layout.itemAt(0).widget()
-        clone_miner_layout = clone_miner_group.layout()
-        
-        length_slider = clone_miner_layout.itemAt(0).layout().itemAt(1).widget()
-        print(f"Minimal clone length in tokens: {length_slider.value()}")
-        
-        filtering_group = clone_miner_layout.itemAt(1).widget()
-        filtering_layout = filtering_group.layout()
-        
-        convert_checkbox = filtering_layout.itemAt(0).widget()
-        archetype_slider = filtering_layout.itemAt(1).layout().itemAt(1).widget()
-        strict_filtering_checkbox = filtering_layout.itemAt(2).widget()
-        
-        print(f"Convert to DRL: {convert_checkbox.isChecked()}")
-        print(f"Minimal archetype length in tokens: {archetype_slider.value()}")
-        print(f"Strict small and overlapping duplicate filtering: {strict_filtering_checkbox.isChecked()}")
-        print()
-
-    def log_page2_values(self):
-        # Page 2 values
-        print("Page 2 - Interactive mode:")
-        fuzzy_heat_group = self.page2Layout.itemAt(0).widget()
-        fuzzy_heat_layout = fuzzy_heat_group.layout()
-        
-        min_clone_slider = fuzzy_heat_layout.itemAt(0).layout().itemAt(1).widget()
-        max_clone_slider = fuzzy_heat_layout.itemAt(1).layout().itemAt(1).widget()
-        min_group_slider = fuzzy_heat_layout.itemAt(2).layout().itemAt(1).widget()
-        extension_checkbox = fuzzy_heat_layout.itemAt(3).widget()
-        
-        print(f"Minimal clone length: {min_clone_slider.value()}")
-        print(f"Maximal clone length: {max_clone_slider.value()}")
-        print(f"Minimal group power: {min_group_slider.value()}")
-        print(f"Extension point values: {extension_checkbox.isChecked()}")
-        print()
-
-    def log_page3_values(self):
-        # Page 3 values
-        print("Page 3 - Ngram Duplicate Finder:")
-        fuzzy_finder_group = self.page3Layout.itemAt(0).widget()
-        fuzzy_finder_layout = fuzzy_finder_group.layout()
-        
-        min_clone_slider = fuzzy_finder_layout.itemAt(0).layout().itemAt(1).widget()
-        max_edit_slider = fuzzy_finder_layout.itemAt(1).layout().itemAt(1).widget()
-        max_fuzzy_slider = fuzzy_finder_layout.itemAt(2).layout().itemAt(1).widget()
-        source_language = fuzzy_finder_layout.itemAt(3).layout().itemAt(1).widget()
-        
-        print(f"Minimal clone length: {min_clone_slider.value()}")
-        print(f"Maximal edit distance: {max_edit_slider.value()}")
-        print(f"Minimal group power: {max_fuzzy_slider.value()}")
-        print(f"Source Language: {source_language.currentText()}")
-        print()
-
-    def log_page4_values(self):
-        # Page 4 values
-        print("Page 4 - Heuristic Ngram Finder:")
-        heurestic_duplicate_group = self.page4Layout.itemAt(0).widget()
-        heurestic_duplicate_layout = heurestic_duplicate_group.layout()
-        
-        extention_point_checkbox = heurestic_duplicate_layout.itemAt(0).widget()
-        
-        print(f"Extension point values: {extention_point_checkbox.isChecked()}")
-        print()
+            data = {
+                'extention_point_checkbox': extention_point_checkbox.isChecked()
+            }
+            page4_func(data)       
 
 
 if __name__ == "__main__":
