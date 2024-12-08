@@ -1,18 +1,24 @@
-import sys
+import sys, requests, json
+import subprocess, time, signal, sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QLabel, 
                              QFileDialog, QStackedLayout, QFormLayout, QSlider, QGroupBox, QHBoxLayout, 
                              QCheckBox)
 from PyQt5.QtCore import Qt
 
 
-from modes.automatic_mode_demo import page1_func
-from modes.interactive_mode_demo import page2_func
-from modes.ngram_duplicate_finder_demo import page3_func
-from modes.heuristic_ngram_finder_demo import page4_func
+# from modes.automatic_mode_demo import page1_func
+# from modes.interactive_mode_demo import page2_func
+# from modes.ngram_duplicate_finder_demo import page3_func
+# from modes.heuristic_ngram_finder_demo import page4_func
 
 class DocLine(QWidget):
     def __init__(self):
         super().__init__()
+        #server starts
+        self.go_server_process = subprocess.Popen(["go","run","modes/server.go"]) # file version
+        #self.go_server_process = subprocess.Popen(["./modes/server"]) # compile version
+        signal.signal(signal.SIGINT, self.stop_server)
+        signal.signal(signal.SIGTERM, self.stop_server)
         # window settings
         self.setWindowTitle("DocLine demo")
         self.setFixedHeight(500)
@@ -296,7 +302,9 @@ class DocLine(QWidget):
                 'archetype_slider': archetype_slider.value(),
                 'strict_filtering_checkbox': strict_filtering_checkbox.isChecked()
             }
-            page1_func(data)
+            response = requests.post("http://localhost:8080/automatic_mode", json=data)
+            print(f"Automatic Mode Response Status: {response.status_code}")
+            #page1_func(data)
         elif current_index == 1:  # Page 2 - Interactive mode
             fuzzy_heat_group = self.page2Layout.itemAt(0).widget()
             fuzzy_heat_layout = fuzzy_heat_group.layout()
@@ -312,7 +320,9 @@ class DocLine(QWidget):
                 'min_group_slider': min_group_slider.value(),
                 'extension_checkbox': extension_checkbox.isChecked()
             }
-            page2_func(data)
+            response = requests.post("http://localhost:8080/interactive_mode", json=data)
+            print(f"Interactive Mode Response Status: {response.status_code}")
+            #page2_func(data)
         elif current_index == 2:  # Page 3 - Ngram Duplicate Finder
             fuzzy_finder_group = self.page3Layout.itemAt(0).widget()
             fuzzy_finder_layout = fuzzy_finder_group.layout()
@@ -328,7 +338,9 @@ class DocLine(QWidget):
                 'max_fuzzy_slider': max_fuzzy_slider.value(),
                 'source_language': source_language.currentText()
             }
-            page3_func(data)
+            response = requests.post("http://localhost:8080/ngram_finder", json=data)
+            print(f"Ngram Duplicate Response Status: {response.status_code}" )
+            #page3_func(data)
         elif current_index == 3:  # Page 4 - Heuristic Ngram Finder
             heurestic_duplicate_group = self.page4Layout.itemAt(0).widget()
             heurestic_duplicate_layout = heurestic_duplicate_group.layout()
@@ -338,7 +350,13 @@ class DocLine(QWidget):
             data = {
                 'extention_point_checkbox': extention_point_checkbox.isChecked()
             }
-            page4_func(data)       
+            response = requests.post("http://localhost:8080/heuristic_finder", json=data)
+            print(f"Heuristic Ngram Response Status: {response.status_code}" )
+            #page4_func(data)  
+    def stop_server(self):
+        print("Stop Go server")
+        self.go_server_process.terminate()
+        sys.exit(0) 
 
 
 if __name__ == "__main__":
