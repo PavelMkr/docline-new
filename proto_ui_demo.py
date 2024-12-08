@@ -353,10 +353,16 @@ class DocLine(QWidget):
             response = requests.post("http://localhost:8080/heuristic_finder", json=data)
             print(f"Heuristic Ngram Response Status: {response.status_code}" )
             #page4_func(data)  
+
+    def closeEvent(self, close):
+        self.stop_server()
+        close.accept()
+
     def stop_server(self):
         print("Stop Go server")
         self.go_server_process.terminate()
-        sys.exit(0) 
+        self.go_server_process.wait()
+        #sys.exit(0) 
 
 
 if __name__ == "__main__":
