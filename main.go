@@ -100,21 +100,21 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
+    if r.Method != http.MethodPost {
+        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+        return
+    }
 
-	var data NgramDuplicateFinderData
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
+    var data NgramDuplicateFinderData
+    if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+        http.Error(w, "Invalid JSON", http.StatusBadRequest)
+        return
+    }
 
-	fmt.Println("Ngram Finder Data Received:", data)
-	response := map[string]string{"status": "success", "message": "Ngram finder processed"}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+    fmt.Println("Ngram Finder Data Received:", data)
+    response := map[string]string{"status": "success", "message": "Ngram finder processed"}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
 }
 
 func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {

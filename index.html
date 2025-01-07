@@ -23,7 +23,7 @@
             </div>
 
             <!-- Fuzzy Finder Settings -->
-            <div id="ngram-settings" class="settings-group">
+            <div id="ngram-settings" class="settings-group" style="display:block;">
                 <h2>Fuzzy Finder Settings</h2>
                 <label for="min-clone-length">Minimal clone length (tokens):</label>
                 <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
@@ -48,8 +48,9 @@
                 <label for="group-power">Minimal group power (number of clones):</label>
                 <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
                 <label for="archetype">
+                    Archetype calculation:
                     <input type="checkbox" id="archetype" name="archetype">
-                    Archetype calculation
+                    
                 </label>
             </div>
 
@@ -61,17 +62,18 @@
                 <label for="archetype-length">Minimal archetype length (tokens):</label>
                 <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
                 <label for="strict-filter">
+                    Strict small and overlapping duplicate filtering:
                     <input type="checkbox" id="strict-filter" name="strict-filter" checked>
-                    Strict small and overlapping duplicate filtering
+                    
                 </label>
             </div>
 
             <!-- heuristic Mode Settings -->
             <div id="heuristic-settings" class="settings-group" style="display:none;">
                 <h2>Heuristic Mode Settings</h2>
-                <label for="heuristic-filter">
-                    <input type="checkbox" id="strict-filter" name="strict-filter" checked>
-                    Strict small and overlapping duplicate filtering
+                <label for="extension-value">
+                    Extension point values:
+                    <input type="checkbox" id="extension-value" name="extension-value" checked>
                 </label>
             </div>
 
