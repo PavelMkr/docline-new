@@ -126,6 +126,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	var data HeuristicNgramFinderData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		log.Printf("Received request: %s %s", r.Method, r.URL.Path)
 		return
 	}
 

@@ -18,6 +18,7 @@
                     <option value="ngram-duplicate-finder">Ngram Duplicate Finder</option>
                     <option value="interactive-mode">Interactive Mode</option>
                     <option value="automatic-mode">Automatic Mode</option>
+                    <option value="heuristic-mode">Heuristic Mode</option>
                 </select>
             </div>
 
@@ -60,6 +61,15 @@
                 <label for="archetype-length">Minimal archetype length (tokens):</label>
                 <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
                 <label for="strict-filter">
+                    <input type="checkbox" id="strict-filter" name="strict-filter" checked>
+                    Strict small and overlapping duplicate filtering
+                </label>
+            </div>
+
+            <!-- heuristic Mode Settings -->
+            <div id="heuristic-settings" class="settings-group" style="display:none;">
+                <h2>Heuristic Mode Settings</h2>
+                <label for="heuristic-filter">
                     <input type="checkbox" id="strict-filter" name="strict-filter" checked>
                     Strict small and overlapping duplicate filtering
                 </label>
