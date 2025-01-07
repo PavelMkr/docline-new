@@ -1,0 +1,220 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocLine Demo</title>
+    <script>
+        function updateFilePath() {
+            const fileInput = document.getElementById('fileInput');
+            const filePathLabel = document.getElementById('filePathLabel');
+            filePathLabel.innerText = fileInput.value || 'No file';
+        }
+    </script>
+</head>
+<body>
+    <h1>DocLine Demo</h1>
+    <form action="/submit" method="post">
+        <label for="mode">Select Mode:</label>
+        <select name="mode" id="mode">
+            <option value="automatic">Automatic Mode</option>
+            <option value="interactive">Interactive Mode</option>
+            <option value="ngram">Ngram Duplicate Finder</option>
+            <option value="heuristic">Heuristic Ngram Finder</option>
+        </select><br><br>
+
+        <label for="fileInput">Choose File:</label>
+        <input type="file" id="fileInput" name="filePath" onchange="updateFilePath()"><br>
+        <span id="filePathLabel">No file</span><br><br>
+
+        <button type="submit">Start</button>
+    </form>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        select, input[type="range"], input[type="checkbox"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .range-label {
+            display: flex;
+            justify-content: space-between;
+        }
+        .buttons {
+            text-align: right;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analysis Interface</h1>
+        
+        <form id="analysis-method">
+            <!-- Analysis Method Selection -->
+            <div class="form-group">
+                <label for="analysis-method">Analysis method:</label>
+                <select id="analysis-method" name="analysis-method">
+                    <option value="ngram-duplicate-finder">Ngram Duplicate Finder</option>
+                    <option value="interactive-mode">Interactive Mode</option>
+                    <option value="automatic-mode">Automatic Mode</option>
+                </select>
+            </div>
+
+            <!-- Fuzzy Finder Settings -->
+            <div id="ngram-settings" class="form-group">
+                <label>Fuzzy Finder Settings</label>
+                <label for="min-clone-length">Minimal clone length (number of tokens):</label>
+                <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
+                <label for="max-edit-distance">Maximal edit distance (Levenshtein):</label>
+                <input type="range" id="max-edit-distance" name="max-edit-distance" min="0" max="20" value="9">
+                <label for="max-fuzzy-hash-distance">Maximal fuzzy hash distance:</label>
+                <input type="range" id="max-fuzzy-hash-distance" name="max-fuzzy-hash-distance" min="0" max="10" value="2">
+                <label for="source-language">Source document language:</label>
+                <select id="source-language" name="source-language">
+                    <option value="english">English</option>
+                    <option value="spanish">Russian</option>
+                </select>
+            </div>
+
+            <!-- Interactive Mode Settings -->
+            <div id="interactive-settings" class="form-group" style="display:none;">
+                <label>Fuzzy Heat Settings</label>
+                <label for="interactive-min-length">Minimal clone length (number of tokens):</label>
+                <input type="range" id="interactive-min-length" name="interactive-min-length" min="1" max="50" value="20">
+                <label for="interactive-max-length">Maximal clone length (number of tokens):</label>
+                <input type="range" id="interactive-max-length" name="interactive-max-length" min="1" max="100" value="50">
+                <label for="group-power">Minimal group power (number of clones):</label>
+                <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
+                <label for="archetype">Archetype calculation:</label>
+                <label>Extension point values
+                    <input type="checkbox" id="archetype" name="archetype">
+                </label>
+                
+            </div>
+
+            <!-- Automatic Mode Settings -->
+            <div id="automatic-settings" class="form-group" style="display:none;">
+                <label>Clone Miner Settings</label>
+                <label for="auto-min-clone-length">Minimal clone length in tokens:</label>
+                <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="50" value="20">
+                <label for="archetype-length">Minimal archetype length in tokens:</label>
+                <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
+                
+                <label for="strict-filter">Strict small and overlapping duplicate filtering
+                    <input type="checkbox" id="strict-filter" name="strict-filter" checked> 
+                </label>
+            </div>
+
+            <!-- Source File Input -->
+            <div class="form-group">
+                <label for="source-file">Source file:</label>
+                <input type="text" id="source-file" name="source-file" placeholder="Enter file path">
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button type="submit">OK</button>
+                <button type="button">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const analysisMethod = document.getElementById('analysis-method');
+        const ngramSettings = document.getElementById('ngram-settings');
+        const interactiveSettings = document.getElementById('interactive-settings');
+        const automaticSettings = document.getElementById('automatic-settings');
+    
+        analysisMethod.addEventListener('change', function() {
+            ngramSettings.style.display = 'none';
+            interactiveSettings.style.display = 'none';
+            automaticSettings.style.display = 'none';
+    
+            if (this.value === 'ngram-duplicate-finder') {
+                ngramSettings.style.display = 'block';
+            } else if (this.value === 'interactive-mode') {
+                interactiveSettings.style.display = 'block';
+            } else if (this.value === 'automatic-mode') {
+                automaticSettings.style.display = 'block';
+            }
+        });
+    
+        // Обработка отправки формы
+        const form = document.getElementById('analysis-method');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Останавливаем обычное поведение формы
+    
+            const formData = new FormData(form);
+            const jsonData = {};
+    
+            // Преобразуем FormData в JSON
+            formData.forEach((value, key) => {
+                jsonData[key] = value;
+            });
+    
+            // Получаем метод анализа
+            const method = analysisMethod.value;
+            const endpointMap = {
+                'ngram-duplicate-finder': '/ngram_finder',
+                'interactive-mode': '/interactive_mode',
+                'automatic-mode': '/automatic_mode'
+            };
+    
+            // Отправка данных на сервер
+            fetch(endpointMap[method], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => response.json()) // Декодируем JSON из ответа
+            .then(data => {
+                console.log('Response:', data); // Обрабатываем успешный ответ
+                alert('Data submitted successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Submission failed. Check the console for more details.');
+            });
+        });
+    </script>
+    
+</body>
+</html>
