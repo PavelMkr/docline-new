@@ -70,9 +70,9 @@ form.addEventListener('submit', async (event) => {
             throw new Error(`Server returned ${response.status}: ${text}`);
         }
 
-        const result = await response.json();
-        console.info('Server result:', JSON.stringify(result));
-        alert('Success: ' + JSON.stringify(result));
+        // const result = await response.json();
+        // console.info('Server result:', JSON.stringify(result));
+        // alert('Success: ' + JSON.stringify(result));
     } catch (error) {
         console.error('Error:', error);
         alert('An error occurred: ' + error.message);
