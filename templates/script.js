@@ -64,7 +64,7 @@ form.addEventListener('submit', async (event) => {
             },
             body: JSON.stringify(requestData),
         });
-
+        console.log('Sending to', endpoint, JSON.stringify(requestData));
         if (!response.ok) {
             const text = await response.text();
             throw new Error(`Server returned ${response.status}: ${text}`);

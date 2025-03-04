@@ -41,7 +41,7 @@ type NgramDuplicateFinderData struct {
 
 // Heuristic Ngram Finder Data
 type HeuristicNgramFinderData struct {
-    ExtensionPointCheckbox bool `json:"extention_point_checkbox"`
+    ExtensionPointCheckbox bool `json:"extension_point_checkbox"`
 }
 
 func main() {
@@ -140,7 +140,6 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
     var data HeuristicNgramFinderData
     if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
         http.Error(w, "Invalid JSON", http.StatusBadRequest)
-        log.Printf("Received request: %s %s", r.Method, r.URL.Path)
         return
     }
     fmt.Println("Heuristic Finder Data Received:", data)
