@@ -47,7 +47,9 @@ type HeuristicNgramFinderData struct {
 func main() {
     // Parse HTML templates
     templates := template.Must(template.ParseFiles("index.html"))
-    http.Handle("/templates/", http.StripPrefix("/templates/", http.FileServer(http.Dir("templates"))))
+
+    // Serve static files (CSS, JS)
+    http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
     // Handlers
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -61,26 +63,22 @@ func main() {
     http.HandleFunc("/ngram_finder", ngramFinderHandler)
     http.HandleFunc("/heuristic_finder", heuristicFinderHandler)
 
-    // Start HTTP server in a separate goroutine
+    // Start HTTP server
     var wg sync.WaitGroup
     wg.Add(1)
     go func() {
         defer wg.Done()
-        fmt.Println("HTTP Server is running on port 8000...")
+        fmt.Println("HTTP Server running on port 8000...")
         if err := http.ListenAndServe(":8000", nil); err != nil {
             log.Fatalf("HTTP Server error: %v", err)
         }
     }()
 
-    // Create a window for go-webui
+    // Launch the browser window via the HTTP server
     w := ui.NewWindow()
-    // Show frontend.
-    w.Show("index.html")
+    w.Show("http://localhost:8000/") // Critical fix: use server URL
 
-    // Wait until all windows get closed.
     ui.Wait()
-
-    // Wait for the HTTP server to finish (if needed)
     wg.Wait()
 }
 
