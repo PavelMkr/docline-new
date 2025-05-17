@@ -62,9 +62,7 @@ type Duplicate struct {
 	Positions []int  `json:"positions"`
 }
 
-//
 // func
-//
 func analyzeDuplicates(content string, settings AnalysisSettings) ([]Duplicate, error) {
 	// Split text into words
 	words := strings.Fields(content)
@@ -111,9 +109,7 @@ func analyzeDuplicates(content string, settings AnalysisSettings) ([]Duplicate, 
 	return duplicates, nil
 }
 
-//
 // Handlers
-//
 func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -255,11 +251,12 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-//
 // main
-//
 func main() {
+	// Create a new window
+	window := ui.NewWindow()
+	defer window.Close()
+
 	// Parse HTML templates
 	templates := template.Must(template.ParseFiles("index.html"))
 
@@ -292,21 +289,21 @@ func main() {
 		done <- true
 	}()
 
-	// Launch the browser window via the HTTP server
-	window := ui.NewWindow()
+	// Bind event handlers
 	window.Bind("onClose", func(e ui.Event) interface{} {
 		log.Println("Window closing...")
 		server.Close()
-		window.Close()
 		return nil
 	})
 
+	// Show the window
 	if err := window.Show("http://localhost:8000/"); err != nil {
 		log.Printf("Error showing window: %v", err)
 		server.Close()
 		return
 	}
 
+	// Wait for all windows to close
 	ui.Wait()
 	<-done
 }
