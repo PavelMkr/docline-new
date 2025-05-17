@@ -41,13 +41,13 @@ form.addEventListener('submit', async (event) => {
                 source_language: document.getElementById('source-language').value,
             };
             formData.append('settings', JSON.stringify(settings));
-            endpoint = '/upload';
+            endpoint = '/ngram_finder';
         } else if (method === 'heuristic-mode') {
             const settings = {
                 extension_point_checkbox: document.getElementById('extension-value').checked,
             };
             formData.append('settings', JSON.stringify(settings));
-            endpoint = '/upload';
+            endpoint = '/heuristic_finder';
         }
     } else {
         // for other JSON
@@ -77,12 +77,22 @@ form.addEventListener('submit', async (event) => {
         let response;
 
         if (formData) {
+            // Debug logging
+            console.log('Sending FormData to:', endpoint);
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ', pair[1]);
+            }
+
             // FormData for ngram_finder and heuristic_finder
             response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData,
             });
         } else {
+            // Debug logging
+            console.log('Sending JSON to:', endpoint);
+            console.log('Request data:', requestData);
+
             // JSON for others
             response = await fetch(endpoint, {
                 method: 'POST',
@@ -95,6 +105,7 @@ form.addEventListener('submit', async (event) => {
 
         if (!response.ok) {
             const text = await response.text();
+            console.error('Server error response:', text);
             throw new Error(`Server returned ${response.status}: ${text}`);
         }
 
