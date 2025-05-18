@@ -1,3 +1,0 @@
-[submodule "modules/go-webui"]
-	path = modules/go-webui
-	url = https://github.com/webui-dev/go-webui.git
