@@ -1,119 +1,170 @@
-const form = document.getElementById('analysis-method-form');
-const analysisMethod = document.getElementById('analysis-method');
-const ngramSettings = document.getElementById('ngram-settings');
-const interactiveSettings = document.getElementById('interactive-settings');
-const automaticSettings = document.getElementById('automatic-settings');
-const heuristicSettings = document.getElementById('heuristic-settings');
+document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
+    const form = document.getElementById('analysis-method-form');
+    const analysisMethod = document.getElementById('analysis-method');
+    const ngramSettings = document.getElementById('ngram-settings');
+    const interactiveSettings = document.getElementById('interactive-settings');
+    const automaticSettings = document.getElementById('automatic-settings');
+    const heuristicSettings = document.getElementById('heuristic-settings');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const formTitle = document.querySelector('h1');
 
-analysisMethod.addEventListener('change', () => {
-    const method = analysisMethod.value;
-    [ngramSettings, interactiveSettings, automaticSettings].forEach(setting => setting.style.display = 'none');
-    if (method === 'ngram-duplicate-finder') ngramSettings.style.display = 'block';
-    if (method === 'interactive-mode') interactiveSettings.style.display = 'block';
-    if (method === 'automatic-mode') automaticSettings.style.display = 'block';
-    if (method === 'heuristic-mode') heuristicSettings.style.display = 'block';
-});
+    // Store form values
+    let formValues = {
+        'ngram-duplicate-finder': {
+            'min-clone-length': '25',
+            'max-edit-distance': '9',
+            'max-fuzzy-hash-distance': '2',
+            'source-language': 'english'
+        },
+        'interactive-mode': {
+            'interactive-min-length': '20',
+            'interactive-max-length': '50',
+            'group-power': '2',
+            'archetype': false
+        },
+        'automatic-mode': {
+            'auto-min-clone-length': '20',
+            'archetype-length': '5',
+            'strict-filter': true
+        },
+        'heuristic-mode': {
+            'extension-value': true
+        }
+    };
 
-form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const method = analysisMethod.value;
-    let requestData = {};
-    let endpoint = '';
-    let formData = null;
-
-    if (method === 'ngram-duplicate-finder' || method === 'heuristic-mode') {
-        formData = new FormData();
-        const fileInput = document.getElementById('source-file');
-
-        if (!fileInput.files[0]) {
-            alert('Please select a file.');
-            return;
+    // Function to save current form values
+    function saveCurrentFormValues(method) {
+        const values = {};
+        let settingsGroup;
+        
+        // Map method to correct settings group ID
+        switch(method) {
+            case 'ngram-duplicate-finder':
+                settingsGroup = ngramSettings;
+                break;
+            case 'interactive-mode':
+                settingsGroup = interactiveSettings;
+                break;
+            case 'automatic-mode':
+                settingsGroup = automaticSettings;
+                break;
+            case 'heuristic-mode':
+                settingsGroup = heuristicSettings;
+                break;
         }
 
-        formData.append('file', fileInput.files[0]);
+        if (!settingsGroup) return;
 
-        if (method === 'ngram-duplicate-finder') {
-            const settings = {
-                min_clone_slider: parseInt(document.getElementById('min-clone-length').value, 10),
-                max_edit_slider: parseInt(document.getElementById('max-edit-distance').value, 10),
-                max_fuzzy_slider: parseInt(document.getElementById('max-fuzzy-hash-distance').value, 10),
-                source_language: document.getElementById('source-language').value,
-            };
-            formData.append('settings', JSON.stringify(settings));
-            endpoint = '/ngram_finder';
-        } else if (method === 'heuristic-mode') {
-            const settings = {
-                extension_point_checkbox: document.getElementById('extension-value').checked,
-            };
-            formData.append('settings', JSON.stringify(settings));
-            endpoint = '/heuristic_finder';
-        }
-    } else {
-        // for other JSON
-        if (method === 'interactive-mode') {
-            requestData = {
-                min_clone_slider: parseInt(document.getElementById('interactive-min-length').value, 10),
-                max_clone_slider: parseInt(document.getElementById('interactive-max-length').value, 10),
-                min_group_slider: parseInt(document.getElementById('group-power').value, 10),
-                extension_checkbox: document.getElementById('archetype').checked,
-            };
-        } else if (method === 'automatic-mode') {
-            requestData = {
-                length_slider: parseInt(document.getElementById('auto-min-clone-length').value, 10),
-                convert_checkbox: document.getElementById('strict-filter').checked,
-                archetype_slider: parseInt(document.getElementById('archetype-length').value, 10),
-                strict_filtering_checkbox: document.getElementById('strict-filter').checked,
-            };
-        }
-
-        endpoint = {
-            'interactive-mode': '/interactive_mode',
-            'automatic-mode': '/automatic_mode',
-        }[method];
+        settingsGroup.querySelectorAll('input, select').forEach(element => {
+            values[element.id] = element.type === 'checkbox' ? element.checked : element.value;
+        });
+        formValues[method] = values;
     }
 
-    try {
-        let response;
+    // Function to restore form values
+    function restoreFormValues(method) {
+        const values = formValues[method];
+        if (!values) return;
 
-        if (formData) {
-            // Debug logging
-            console.log('Sending FormData to:', endpoint);
-            for (let pair of formData.entries()) {
-                console.log(pair[0] + ': ', pair[1]);
+        Object.keys(values).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = values[id];
+                } else {
+                    element.value = values[id];
+                }
+            }
+        });
+    }
+
+    // Analysis method change handler
+    analysisMethod.addEventListener('change', () => {
+        const method = analysisMethod.value;
+        
+        // Save current values before switching
+        const currentMethod = Object.keys(formValues).find(key => {
+            const settingsId = key === 'ngram-duplicate-finder' ? 'ngram-settings' :
+                             key === 'interactive-mode' ? 'interactive-settings' :
+                             key === 'automatic-mode' ? 'automatic-settings' :
+                             'heuristic-settings';
+            return document.getElementById(settingsId).style.display === 'block';
+        });
+        
+        if (currentMethod) {
+            saveCurrentFormValues(currentMethod);
+        }
+
+        // Hide all settings
+        [ngramSettings, interactiveSettings, automaticSettings, heuristicSettings].forEach(setting => {
+            if (setting) setting.style.display = 'none';
+        });
+
+        // Show selected settings and update UI
+        const selectedSettings = {
+            'ngram-duplicate-finder': { title: 'Ngram Analysis Interface', button: 'Run Ngram Analysis', element: ngramSettings },
+            'interactive-mode': { title: 'Interactive Analysis Interface', button: 'Start Interactive Analysis', element: interactiveSettings },
+            'automatic-mode': { title: 'Automatic Analysis Interface', button: 'Run Automatic Analysis', element: automaticSettings },
+            'heuristic-mode': { title: 'Heuristic Analysis Interface', button: 'Run Heuristic Analysis', element: heuristicSettings }
+        }[method];
+
+        if (selectedSettings) {
+            selectedSettings.element.style.display = 'block';
+            formTitle.textContent = selectedSettings.title;
+            submitButton.textContent = selectedSettings.button;
+            restoreFormValues(method);
+        }
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const method = analysisMethod.value;
+
+        try {
+            let settings;
+            if (method === 'ngram-duplicate-finder') {
+                settings = {
+                    analysisMethod: method,
+                    minCloneLength: parseInt(document.getElementById('min-clone-length').value),
+                    maxEditDistance: parseInt(document.getElementById('max-edit-distance').value),
+                    maxFuzzyHashDistance: parseInt(document.getElementById('max-fuzzy-hash-distance').value),
+                    sourceLanguage: document.getElementById('source-language').value
+                };
+            } else if (method === 'heuristic-mode') {
+                settings = {
+                    analysisMethod: method,
+                    extensionValue: document.getElementById('extension-value').checked
+                };
+            } else if (method === 'interactive-mode') {
+                settings = {
+                    analysisMethod: method,
+                    interactiveMinLength: parseInt(document.getElementById('interactive-min-length').value),
+                    interactiveMaxLength: parseInt(document.getElementById('interactive-max-length').value),
+                    groupPower: parseInt(document.getElementById('group-power').value),
+                    archetype: document.getElementById('archetype').checked
+                };
+            } else if (method === 'automatic-mode') {
+                settings = {
+                    analysisMethod: method,
+                    autoMinCloneLength: parseInt(document.getElementById('auto-min-clone-length').value),
+                    archetypeLength: parseInt(document.getElementById('archetype-length').value),
+                    strictFilter: document.getElementById('strict-filter').checked
+                };
             }
 
-            // FormData for ngram_finder and heuristic_finder
-            response = await fetch(endpoint, {
-                method: 'POST',
-                body: formData,
-            });
-        } else {
-            // Debug logging
-            console.log('Sending JSON to:', endpoint);
-            console.log('Request data:', requestData);
+            // Add source file if it exists
+            const sourceFile = document.getElementById('source-file');
+            if (sourceFile && sourceFile.files[0]) {
+                settings.sourceFile = sourceFile.files[0].name;
+            }
 
-            // JSON for others
-            response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData),
-            });
+            const result = await window.SendSettings(JSON.stringify(settings));
+            console.log('Analysis completed:', result);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
         }
-
-        if (!response.ok) {
-            const text = await response.text();
-            console.error('Server error response:', text);
-            throw new Error(`Server returned ${response.status}: ${text}`);
-        }
-
-        const result = await response.json();
-        console.info('Server result:', JSON.stringify(result));
-        alert('Success: ' + JSON.stringify(result));
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred: ' + error.message);
-    }
+    });
 });

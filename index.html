@@ -1,97 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Interface</title>
-    <link rel="stylesheet" href="static/styles.css">
-    <script src="webui.js"></script>
-</head>
-<body>
-    <div class="container">
-        <h1>Analysis Interface</h1>
-        
-        <form id="analysis-method-form" enctype="multipart/form-data">
-            <!-- Analysis Method Selection -->
-            <div class="form-group">
-                <label for="analysis-method">Analysis method:</label>
-                <select id="analysis-method" name="analysis-method">
-                    <option value="ngram-duplicate-finder">Ngram Duplicate Finder</option>
-                    <option value="interactive-mode">Interactive Mode</option>
-                    <option value="automatic-mode">Automatic Mode</option>
-                    <option value="heuristic-mode">Heuristic Mode</option>
-                </select>
-            </div>
+<!-- index.html -->
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Analysis Interface</title>
+        <link rel="stylesheet" href="static/styles.css">
+        <script src="webui.js"></script>
+    </head>
+   <body>
+        <div class="container">
+            <h1>Analysis Interface</h1>
+            
+            <form id="analysis-method-form" enctype="multipart/form-data">
+                <!-- Analysis Method Selection -->
+                <div class="form-group">
+                    <label for="analysis-method">Analysis method:</label>
+                    <select id="analysis-method" name="analysis-method">
+                        <option value="ngram-duplicate-finder">Ngram Duplicate Finder</option>
+                        <option value="interactive-mode">Interactive Mode</option>
+                        <option value="automatic-mode">Automatic Mode</option>
+                        <option value="heuristic-mode">Heuristic Mode</option>
+                    </select>
+                </div>
 
-            <!-- Fuzzy Finder Settings -->
-            <div id="ngram-settings" class="settings-group" style="display:block;">
-                <h2>Fuzzy Finder Settings</h2>
-                <label for="min-clone-length">Minimal clone length (tokens):</label>
-                <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
-                <label for="max-edit-distance">Maximal edit distance (Levenshtein):</label>
-                <input type="range" id="max-edit-distance" name="max-edit-distance" min="0" max="20" value="9">
-                <label for="max-fuzzy-hash-distance">Maximal fuzzy hash distance:</label>
-                <input type="range" id="max-fuzzy-hash-distance" name="max-fuzzy-hash-distance" min="0" max="10" value="2">
-                <label for="source-language">Source document language:</label>
-                <select id="source-language" name="source-language">
-                    <option value="english">English</option>
-                    <option value="russian">Russian</option>
-                </select>
-            </div>
+                <!-- Fuzzy Finder Settings -->
+                <div id="ngram-settings" class="settings-group" style="display:block;">
+                    <h2>Fuzzy Finder Settings</h2>
+                    <label for="min-clone-length">Minimal clone length (tokens):</label>
+                    <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
+                    <label for="max-edit-distance">Maximal edit distance (Levenshtein):</label>
+                    <input type="range" id="max-edit-distance" name="max-edit-distance" min="0" max="20" value="9">
+                    <label for="max-fuzzy-hash-distance">Maximal fuzzy hash distance:</label>
+                    <input type="range" id="max-fuzzy-hash-distance" name="max-fuzzy-hash-distance" min="0" max="10" value="2">
+                    <label for="source-language">Source document language:</label>
+                    <select id="source-language" name="source-language">
+                        <option value="english">English</option>
+                        <option value="russian">Russian</option>
+                    </select>
+                </div>
 
-            <!-- Interactive Mode Settings -->
-            <div id="interactive-settings" class="settings-group" style="display:none;">
-                <h2>Interactive Mode Settings</h2>
-                <label for="interactive-min-length">Minimal clone length (tokens):</label>
-                <input type="range" id="interactive-min-length" name="interactive-min-length" min="1" max="50" value="20">
-                <label for="interactive-max-length">Maximal clone length (tokens):</label>
-                <input type="range" id="interactive-max-length" name="interactive-max-length" min="1" max="100" value="50">
-                <label for="group-power">Minimal group power (number of clones):</label>
-                <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
-                <label for="archetype">
-                    Archetype calculation:
-                    <input type="checkbox" id="archetype" name="archetype">
-                    
-                </label>
-            </div>
+                <!-- Interactive Mode Settings -->
+                <div id="interactive-settings" class="settings-group" style="display:none;">
+                    <h2>Interactive Mode Settings</h2>
+                    <label for="interactive-min-length">Minimal clone length (tokens):</label>
+                    <input type="range" id="interactive-min-length" name="interactive-min-length" min="1" max="50" value="20">
+                    <label for="interactive-max-length">Maximal clone length (tokens):</label>
+                    <input type="range" id="interactive-max-length" name="interactive-max-length" min="1" max="100" value="50">
+                    <label for="group-power">Minimal group power (number of clones):</label>
+                    <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
+                    <label for="archetype">
+                        Archetype calculation:
+                        <input type="checkbox" id="archetype" name="archetype">
+                        
+                    </label>
+                </div>
 
-            <!-- Automatic Mode Settings -->
-            <div id="automatic-settings" class="settings-group" style="display:none;">
-                <h2>Automatic Mode Settings</h2>
-                <label for="auto-min-clone-length">Minimal clone length (tokens):</label>
-                <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="50" value="20">
-                <label for="archetype-length">Minimal archetype length (tokens):</label>
-                <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
-                <label for="strict-filter">
-                    Strict small and overlapping duplicate filtering:
-                    <input type="checkbox" id="strict-filter" name="strict-filter" checked>
-                    
-                </label>
-            </div>
+                <!-- Automatic Mode Settings -->
+                <div id="automatic-settings" class="settings-group" style="display:none;">
+                    <h2>Automatic Mode Settings</h2>
+                    <label for="auto-min-clone-length">Minimal clone length (tokens):</label>
+                    <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="50" value="20">
+                    <label for="archetype-length">Minimal archetype length (tokens):</label>
+                    <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
+                    <label for="strict-filter">
+                        Strict small and overlapping duplicate filtering:
+                        <input type="checkbox" id="strict-filter" name="strict-filter" checked>
+                        
+                    </label>
+                </div>
 
-            <!-- heuristic Mode Settings -->
-            <div id="heuristic-settings" class="settings-group" style="display:none;">
-                <h2>Heuristic Mode Settings</h2>
-                <label for="extension-value">
-                    Extension point values:
-                    <input type="checkbox" id="extension-value" name="extension-value" checked>
-                </label>
-            </div>
+                <!-- heuristic Mode Settings -->
+                <div id="heuristic-settings" class="settings-group" style="display:none;">
+                    <h2>Heuristic Mode Settings</h2>
+                    <label for="extension-value">
+                        Extension point values:
+                        <input type="checkbox" id="extension-value" name="extension-value" checked>
+                    </label>
+                </div>
 
-            <!-- File Input -->
-            <div class="form-group">
-                <label for="source-file">Source file:</label>
-                <input type="file" id="source-file" name="source-file" accept=".txt,.md,.doc,.docx" required>
-                <small class="file-hint">Supported formats: .txt, .md, .doc, .docx</small>
-            </div>
+                <!-- File Input -->
+                <div class="form-group">
+                    <label for="source-file">Source file:</label>
+                    <input type="file" id="source-file" name="source-file" accept=".txt,.md,.doc,.docx">
+                </div>
 
-            <!-- Buttons -->
-            <div class="buttons">
-                <button type="submit">Submit</button>
-            </div>
-        </form>
-    </div>
+                <!-- Buttons -->
+                <div class="buttons">
+                    <button type="submit" onclick="func();">Submit</button>
+                </div>
+            </form>
+        </div>
 
     <script src="/static/scripts.js"></script>
-</body>
+    </body>
 </html>
