@@ -1,7 +1,7 @@
 package main
 
 
-// ApplyHeuristicRules применяет эвристические правила к n-граммам.
+// applies heuristic rules to n-grams.
 func ApplyHeuristicRules(ngrams []string) []string {
     unique := make(map[string]bool)
     var filtered []string
@@ -31,10 +31,10 @@ func HeuristicNgramAnalysis(data HeuristicNgramFinderData, text string, n int) [
         return nil // if false - dont analyze
     }
 
-    // Генерация n-грамм из текста.
+    // Generate n-grams from text.
     ngrams := GenerateNGrams(text, n)
 
-    // Применение эвристических правил.
+    // Applying heuristic rules.
     filteredNGrams := ApplyHeuristicRules(ngrams)
     return filteredNGrams
 }

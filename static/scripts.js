@@ -122,39 +122,42 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         const method = analysisMethod.value;
         const sourceFile = document.getElementById('source-file').files[0];
-        
+
         if (!sourceFile) {
             alert('Please select a file to analyze');
             return;
         }
 
+        const formData = new FormData();
+        formData.append('file', sourceFile);
+
+        let settings = {};
+        if (method === 'ngram-duplicate-finder') {
+            settings = {
+                min_clone_slider: parseInt(document.getElementById('min-clone-length').value),
+                max_edit_slider: parseInt(document.getElementById('max-edit-distance').value),
+                max_fuzzy_slider: parseInt(document.getElementById('max-fuzzy-hash-distance').value),
+                source_language: document.getElementById('source-language').value
+            };
+        } else if (method === 'heuristic-mode') {
+            settings = {
+                extension_point_checkbox: document.getElementById('extension-value').checked
+            };
+        } else {
+            alert('In current version this mode is not implemented');
+            return;
+        }
+
+        formData.append('settings', JSON.stringify(settings));
+
+        let endpoint = '';
+        if (method === 'ngram-duplicate-finder') {
+            endpoint = 'http://localhost:8080/ngram';
+        } else if (method === 'heuristic-mode') {
+            endpoint = 'http://localhost:8080/heuristic';
+        }
+
         try {
-            const formData = new FormData();
-            formData.append('file', sourceFile);
-
-            let settings = {};
-            if (method === 'ngram-duplicate-finder') {
-                settings = {
-                    minCloneSlider: parseInt(document.getElementById('min-clone-length').value),
-                    maxEditSlider: parseInt(document.getElementById('max-edit-distance').value),
-                    maxFuzzySlider: parseInt(document.getElementById('max-fuzzy-hash-distance').value),
-                    sourceLanguage: document.getElementById('source-language').value
-                };
-            } else if (method === 'heuristic-mode') {
-                settings = {
-                    extensionPointCheckbox: document.getElementById('extension-value').checked
-                };
-            }
-
-            formData.append('settings', JSON.stringify(settings));
-
-            let endpoint = '';
-            if (method === 'ngram-duplicate-finder') {
-                endpoint = '/ngram';
-            } else if (method === 'heuristic-mode') {
-                endpoint = '/heuristic';
-            }
-
             const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
@@ -165,20 +168,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            console.log('Analysis completed:', result);
-
-            // Display results
             let resultMessage = '';
             if (method === 'ngram-duplicate-finder') {
-                resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} duplicate groups.\nResults saved to: ${result.results_file}`;
+                resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} groups of duplicates\nResult: ${result.results_file}`;
             } else if (method === 'heuristic-mode') {
-                resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams.\nResults saved to: ${result.results_file}`;
+                resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams\nResult: ${result.results_file}`;
             }
             alert(resultMessage);
 
         } catch (error) {
+            // FIXME "Load failed" error in webUI 
+            // alert('Error: ' + error.message);
             console.error('Error:', error);
-            alert('Error: ' + error.message);
         }
     });
 });

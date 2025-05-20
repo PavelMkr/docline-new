@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	ui "github.com/webui-dev/go-webui/v2"
 )
@@ -51,94 +52,99 @@ func ensureResultsDir() error {
 }
 
 func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Get request:", r.Method, r.URL.Path)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Ensure results directory exists
 	if err := ensureResultsDir(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var data HeuristicNgramFinderData
+	var filePath string
+	var uploadedTempFile bool = false
 
-	// Try to parse as JSON first
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err == nil {
-		// JSON parsed successfully
-	} else {
-		// If JSON parsing failed, try multipart form
-		err := r.ParseMultipartForm(10 << 20) // 10 MB max
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/json") {
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, "Failed to parse request", http.StatusBadRequest)
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-
-		// Get settings from form
+		filePath = data.FilePath
+		fmt.Println("Use file path from JSON:", filePath)
+	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+			return
+		}
 		settingsStr := r.FormValue("settings")
+		fmt.Println("Settings:", settingsStr)
 		if err := json.Unmarshal([]byte(settingsStr), &data); err != nil {
 			http.Error(w, "Failed to parse settings", http.StatusBadRequest)
 			return
 		}
-
-		// Get uploaded file if present
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
-
-			// Create file to save uploaded content
-			filePath := filepath.Join("./results", handler.Filename)
+			filePath = filepath.Join("./results", handler.Filename)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
 				return
 			}
 			defer dst.Close()
-
-			// Copy uploaded file content
 			if _, err := io.Copy(dst, file); err != nil {
 				http.Error(w, "Failed to save file", http.StatusInternalServerError)
 				return
 			}
-
-			// Set the file path in the data
-			data.FilePath = filePath
+			fmt.Println("File uploaded:", filePath)
+			uploadedTempFile = true
+		} else {
+			fmt.Println("Error getting file:", err)
+			filePath = data.FilePath
 		}
+	} else {
+		http.Error(w, "Unsupported Content-Type", http.StatusBadRequest)
+		return
 	}
 
-	// Check if file path is provided
-	if data.FilePath == "" {
+	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
 		return
 	}
 
-	// Read text from file
-	text, err := readFileContent(data.FilePath)
+	text, err := readFileContent(filePath)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", data.FilePath, err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
 
-	// Use heuristic analysis
 	ngrams := HeuristicNgramAnalysis(data, text, 2)
-	//fmt.Println("Heuristic N-Grams:", ngrams)
 
-	// Save result to file
 	resultFilePath := "./results/heuristic_results.txt"
-	resultData := fmt.Sprintf("Heuristic N-Grams: %v\nAnalyzed file: %s", ngrams, data.FilePath)
+	resultData := fmt.Sprintf("Heuristic N-Grams: %v", ngrams)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Return results directly in the response
+	// if multipart form, remove temp file
+	if uploadedTempFile {
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("Failed to remove temp file: %s, Err: %v\n", filePath, err)
+		}
+	}
+
 	response := map[string]interface{}{
 		"status":        "success",
 		"message":       "Heuristic finder processed",
 		"results_file":  resultFilePath,
-		"analyzed_file": data.FilePath,
+		"analyzed_file": filePath,
 		"ngrams":        ngrams,
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -146,78 +152,80 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Get request:", r.Method, r.URL.Path)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Ensure results directory exists
 	if err := ensureResultsDir(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var data NgramDuplicateFinderData
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		// Try to parse as multipart form if JSON parsing failed
-		err := r.ParseMultipartForm(10 << 20)
+	var filePath string
+	var uploadedTempFile bool = false
+
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/json") {
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			http.Error(w, "Failed to parse request", http.StatusBadRequest)
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-
-		// Get settings from form
+		filePath = data.FilePath
+		fmt.Println("Use file path from JSON:", filePath)
+	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+			return
+		}
 		settingsStr := r.FormValue("settings")
+		fmt.Println("Settings:", settingsStr)
 		if err := json.Unmarshal([]byte(settingsStr), &data); err != nil {
 			http.Error(w, "Failed to parse settings", http.StatusBadRequest)
 			return
 		}
-
-		// Get uploaded file if present
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
-
-			// Create file to save uploaded content
-			filePath := filepath.Join("./results", handler.Filename)
+			filePath = filepath.Join("./results", handler.Filename)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
 				return
 			}
 			defer dst.Close()
-
-			// Copy uploaded file content
 			if _, err := io.Copy(dst, file); err != nil {
 				http.Error(w, "Failed to save file", http.StatusInternalServerError)
 				return
 			}
-
-			// Set the file path in the data
-			data.FilePath = filePath
+			fmt.Println("File uploaded:", filePath)
+			uploadedTempFile = true
+		} else {
+			fmt.Println("Error getting file:", err)
+			filePath = data.FilePath
 		}
+	} else {
+		http.Error(w, "Unsupported Content-Type", http.StatusBadRequest)
+		return
 	}
 
-	// Check if file path is provided
-	if data.FilePath == "" {
+	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
 		return
 	}
 
-	// Read text from file
-	content, err := readFileContent(data.FilePath)
+	content, err := readFileContent(filePath)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", data.FilePath, err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
 
-	// Split text into parts
 	parts := splitTextIntoParts(content)
-
-	// Find duplicates
 	duplicates := FindDuplicatesByNGram(data, parts)
-
-	// Save result to file
 	resultFilePath := "./results/ngram_duplicates.txt"
 	resultData := fmt.Sprintf("Duplicates Found: %v", duplicates)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
@@ -225,7 +233,13 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return results directly in the response
+	// if multipart form, remove temp file
+	if uploadedTempFile {
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("Failed to remove temp file: %s, Err: %v\n", filePath, err)
+		}
+	}
+
 	response := map[string]interface{}{
 		"status":       "success",
 		"message":      "Ngram finder processed",
@@ -242,14 +256,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Парсим multipart form
+	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
 	}
 
-	// Получаем загруженный файл
+	// Get uploaded file
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Error retrieving file", http.StatusBadRequest)
@@ -257,14 +271,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Создаем временную директорию для загруженных файлов, если её нет
+	// Create temporary directory for uploaded files if it doesn't exist
 	uploadDir := "./results"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		http.Error(w, "Failed to create upload directory", http.StatusInternalServerError)
 		return
 	}
 
-	// Создаем файл для сохранения загруженного содержимого
+	// Create file to save uploaded content
 	filePath := filepath.Join(uploadDir, handler.Filename)
 	dst, err := os.Create(filePath)
 	if err != nil {
@@ -273,31 +287,32 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer dst.Close()
 
-	// Копируем содержимое загруженного файла
+	// Copy uploaded file content
 	if _, err := io.Copy(dst, file); err != nil {
 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
 		return
 	}
 
-	// Парсим настройки
+	// Parse settings
 	var settings UploadSettings
 	settingsStr := r.FormValue("settings")
+	fmt.Println("Settings:", settingsStr)
 	if err := json.Unmarshal([]byte(settingsStr), &settings); err != nil {
 		http.Error(w, "Failed to parse settings", http.StatusBadRequest)
 		return
 	}
 
-	// Читаем содержимое файла
+	// Read file content
 	content, err := readFileContent(filePath)
 	if err != nil {
 		http.Error(w, "Failed to read file content", http.StatusInternalServerError)
 		return
 	}
 
-	// Разделяем текст на части
+	// Split text into parts
 	parts := splitTextIntoParts(content)
 
-	// Ищем дубликаты
+	// Find duplicates
 	data := NgramDuplicateFinderData{
 		MinCloneSlider: settings.MinCloneSlider,
 		MaxEditSlider:  settings.MaxEditSlider,
@@ -305,18 +320,39 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		SourceLanguage: settings.SourceLanguage,
 		FilePath:       filePath,
 	}
+	fmt.Printf("data: %+v\n", data)
 	duplicates := FindDuplicatesByNGram(data, parts)
 
-	// Формируем ответ
+	// Form response
 	response := FileUploadResponse{
 		Status:     "success",
 		Message:    "File processed successfully",
 		Duplicates: duplicates,
 	}
 
-	// Отправляем ответ
+	// Send response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func SendSettings(e ui.Event) string {
+	// json string
+	jsonStr, err := ui.GetArg[string](e)
+	if err != nil {
+		return fmt.Sprintf("Error getting argument: %v", err)
+	}
+
+	// json to map
+	var settings map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &settings); err != nil {
+		return fmt.Sprintf("Error parsing JSON: %v", err)
+	}
+
+	// print data
+	fmt.Printf("Received settings: %+v\n", settings)
+
+	// FIXME unnessesarry return
+	return "Settings received and parsed successfully"
 }
 
 func main() {
@@ -335,6 +371,8 @@ func main() {
 	// UI
 	// Create a window.
 	w := ui.NewWindow()
+	// Bind a Go function.
+	ui.Bind(w, "SendSettings", SendSettings)
 	// Show frontend.
 	w.Show("index.html")
 	// Wait until all windows get closed.

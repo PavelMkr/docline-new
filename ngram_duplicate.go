@@ -27,7 +27,7 @@ func CalculateNGramSimilarity(map1, map2 map[string]int) float64 {
     return float64(intersection) / float64(union)
 }
 
-// BuildNGramMap создает карту n-грамм для текста.
+// BuildNGramMap creates a map of n-grams for text.
 func BuildNGramMap(text string, n int) map[string]int {
     ngrams := GenerateNGrams(text, n)
     ngramMap := make(map[string]int)
@@ -41,7 +41,7 @@ func FindDuplicatesByNGram(data NgramDuplicateFinderData, texts []string) map[st
     duplicates := make(map[string][]string)
     ngramMaps := make([]map[string]int, len(texts))
 
-    // Используем MinCloneSlider как размер n-граммы.
+    // Use MinCloneSlider as n-gram size.
     n := data.MinCloneSlider
 
     for i, text := range texts {

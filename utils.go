@@ -6,7 +6,7 @@ import (
     "regexp"
 )
 
-// GenerateNGrams создает n-граммы из входного текста.
+// GenerateNGrams creates n-grams from input text.
 func GenerateNGrams(text string, n int) []string {
     words := strings.Fields(text)
     var ngrams []string
@@ -16,7 +16,7 @@ func GenerateNGrams(text string, n int) []string {
     return ngrams
 }
 
-// writeToFile записывает данные в файл.
+// writeToFile writes data to file.
 func writeToFile(filePath string, data string) error {
     file, err := os.Create(filePath)
     if err != nil {
@@ -31,7 +31,7 @@ func writeToFile(filePath string, data string) error {
     return nil
 }
 
-// readFileContent читает содержимое файла.
+// readFileContent reads file content.
 func readFileContent(filePath string) (string, error) {
     content, err := os.ReadFile(filePath)
     if err != nil {
@@ -40,13 +40,13 @@ func readFileContent(filePath string) (string, error) {
     return string(content), nil
 }
 
-// splitTextIntoParts разделяет текст на части (например, по предложениям).
+// splitTextIntoParts splits text into parts (for example, by sentences).
 func splitTextIntoParts(text string) []string {
-    // Используем регулярное выражение для поиска знаков препинания.
+    // Use regex to find punctuation marks.
     re := regexp.MustCompile(`[.!?]`)
     parts := re.Split(text, -1)
 
-    // Удаляем пустые строки и пробельные символы.
+    // Remove empty lines and whitespace.
     var result []string
     for _, part := range parts {
         part = strings.TrimSpace(part)
