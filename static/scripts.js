@@ -121,47 +121,61 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const method = analysisMethod.value;
+        const sourceFile = document.getElementById('source-file').files[0];
+        
+        if (!sourceFile) {
+            alert('Please select a file to analyze');
+            return;
+        }
 
         try {
-            let settings;
+            const formData = new FormData();
+            formData.append('file', sourceFile);
+
+            let settings = {};
             if (method === 'ngram-duplicate-finder') {
                 settings = {
-                    analysisMethod: method,
-                    minCloneLength: parseInt(document.getElementById('min-clone-length').value),
-                    maxEditDistance: parseInt(document.getElementById('max-edit-distance').value),
-                    maxFuzzyHashDistance: parseInt(document.getElementById('max-fuzzy-hash-distance').value),
+                    minCloneSlider: parseInt(document.getElementById('min-clone-length').value),
+                    maxEditSlider: parseInt(document.getElementById('max-edit-distance').value),
+                    maxFuzzySlider: parseInt(document.getElementById('max-fuzzy-hash-distance').value),
                     sourceLanguage: document.getElementById('source-language').value
                 };
             } else if (method === 'heuristic-mode') {
                 settings = {
-                    analysisMethod: method,
-                    extensionValue: document.getElementById('extension-value').checked
-                };
-            } else if (method === 'interactive-mode') {
-                settings = {
-                    analysisMethod: method,
-                    interactiveMinLength: parseInt(document.getElementById('interactive-min-length').value),
-                    interactiveMaxLength: parseInt(document.getElementById('interactive-max-length').value),
-                    groupPower: parseInt(document.getElementById('group-power').value),
-                    archetype: document.getElementById('archetype').checked
-                };
-            } else if (method === 'automatic-mode') {
-                settings = {
-                    analysisMethod: method,
-                    autoMinCloneLength: parseInt(document.getElementById('auto-min-clone-length').value),
-                    archetypeLength: parseInt(document.getElementById('archetype-length').value),
-                    strictFilter: document.getElementById('strict-filter').checked
+                    extensionPointCheckbox: document.getElementById('extension-value').checked
                 };
             }
 
-            // Add source file if it exists
-            const sourceFile = document.getElementById('source-file');
-            if (sourceFile && sourceFile.files[0]) {
-                settings.sourceFile = sourceFile.files[0].name;
+            formData.append('settings', JSON.stringify(settings));
+
+            let endpoint = '';
+            if (method === 'ngram-duplicate-finder') {
+                endpoint = '/ngram';
+            } else if (method === 'heuristic-mode') {
+                endpoint = '/heuristic';
             }
 
-            const result = await window.SendSettings(JSON.stringify(settings));
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
             console.log('Analysis completed:', result);
+
+            // Display results
+            let resultMessage = '';
+            if (method === 'ngram-duplicate-finder') {
+                resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} duplicate groups.\nResults saved to: ${result.results_file}`;
+            } else if (method === 'heuristic-mode') {
+                resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams.\nResults saved to: ${result.results_file}`;
+            }
+            alert(resultMessage);
+
         } catch (error) {
             console.error('Error:', error);
             alert('Error: ' + error.message);
