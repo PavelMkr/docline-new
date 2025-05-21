@@ -33,6 +33,7 @@ type TextFragment struct {
 type CloneGroup struct {
 	Fragments []TextFragment
 	Archetype string
+	Power     int // Number of fragments in the group
 }
 
 // convertToDRL converts text to DRL format
@@ -67,6 +68,7 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 					StartPos: i,
 					EndPos:   i + settings.MinCloneLength,
 				})
+				groups[j].Power++
 				found = true
 				break
 			}
@@ -81,6 +83,7 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 					EndPos:   i + settings.MinCloneLength,
 				}},
 				Archetype: windowText,
+				Power:     1,
 			})
 		}
 	}
@@ -132,6 +135,7 @@ func filterCloneGroups(groups []CloneGroup, settings AutomaticModeSettings) []Cl
 
 		if len(nonOverlapping) >= 2 {
 			group.Fragments = nonOverlapping
+			group.Power = len(nonOverlapping)
 			filtered = append(filtered, group)
 		}
 	}
@@ -182,7 +186,7 @@ func FormatAutomaticModeResults(groups []CloneGroup, settings AutomaticModeSetti
 
 	sb.WriteString(fmt.Sprintf("Found %d clone groups:\n\n", len(groups)))
 	for i, group := range groups {
-		sb.WriteString(fmt.Sprintf("Group %d:\n", i+1))
+		sb.WriteString(fmt.Sprintf("Group %d (Power: %d):\n", i+1, group.Power))
 		sb.WriteString(fmt.Sprintf("Archetype: %s\n", group.Archetype))
 		sb.WriteString("Fragments:\n")
 		for j, frag := range group.Fragments {

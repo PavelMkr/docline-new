@@ -150,6 +150,16 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // Update settings collection for interactive mode
+    function getInteractiveModeSettings() {
+        return {
+            minCloneLength: parseInt(document.getElementById('interactive-min-length').value),
+            maxCloneLength: parseInt(document.getElementById('interactive-max-length').value),
+            minGroupPower: parseInt(document.getElementById('group-power').value),
+            useArchetype: document.getElementById('archetype').checked
+        };
+    }
+
     // Form submission handler
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -178,6 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         } else if (method === 'automatic-mode') {
             settings = getAutomaticModeSettings();
+        } else if (method === 'interactive-mode') {
+            settings = getInteractiveModeSettings();
         } else {
             alert('In current version this mode is not implemented');
             return;
@@ -192,6 +204,8 @@ document.addEventListener('DOMContentLoaded', function() {
             endpoint = 'http://localhost:8080/heuristic';
         } else if (method === 'automatic-mode') {
             endpoint = 'http://localhost:8080/automatic';
+        } else if (method === 'interactive-mode') {
+            endpoint = 'http://localhost:8080/interactive';
         }
 
         try {
@@ -211,7 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (method === 'heuristic-mode') {
                 resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams\nResult: ${result.results_file}`;
             } else if (method === 'automatic-mode') {
-                resultMessage = `Analysis completed!\nFound ${result.groups.length} groups of duplicates\nResult: ${result.results_file}`;
+                resultMessage = `Analysis completed!\nFound ${Object.keys(result.groups).length} groups of duplicates\nResult: ${result.results_file}`;
+            } else if (method === 'interactive-mode') {
+                resultMessage = `Analysis completed!\nFound ${Object.keys(result.groups).length} groups of duplicates\nResult: ${result.results_file}`;
             }
             alert(resultMessage);
 
