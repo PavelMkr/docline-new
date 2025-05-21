@@ -59,15 +59,32 @@
                 <!-- Automatic Mode Settings -->
                 <div id="automatic-settings" class="settings-group" style="display:none;">
                     <h2>Automatic Mode Settings</h2>
-                    <label for="auto-min-clone-length">Minimal clone length (tokens):</label>
-                    <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="50" value="20">
-                    <label for="archetype-length">Minimal archetype length (tokens):</label>
-                    <input type="range" id="archetype-length" name="archetype-length" min="1" max="10" value="5">
-                    <label for="strict-filter">
-                        Strict small and overlapping duplicate filtering:
-                        <input type="checkbox" id="strict-filter" name="strict-filter" checked>
+                    
+                    <h3>Clone Miner & Preprocessing</h3>
+                    <div class="settings-subgroup">
+                        <label for="auto-min-clone-length">Minimal Clone length (tokens):</label>
+                        <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="20" value="5">
+                        <span class="range-value" id="auto-min-clone-length-value">5</span>
+                    </div>
+                    
+                    <div class="settings-subgroup">
+                        <label for="convert-to-drl">
+                            Convert to DRL:
+                            <input type="checkbox" id="convert-to-drl" name="convert-to-drl" checked>
+                        </label>
+                    </div>
+
+                    <h3>Filtering</h3>
+                    <div class="settings-subgroup">
+                        <label for="archetype-length">Minimal archetype length (tokens):</label>
+                        <input type="range" id="archetype-length" name="archetype-length" min="1" max="20" value="3">
+                        <span class="range-value" id="archetype-length-value">3</span>
                         
-                    </label>
+                        <label for="strict-filter">
+                            Strict small and overlapping duplicate filtering:
+                            <input type="checkbox" id="strict-filter" name="strict-filter" checked>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- heuristic Mode Settings -->

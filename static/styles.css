@@ -56,3 +56,26 @@ button:hover {
     display: flex;
     justify-content: flex-end;
 }
+
+.settings-subgroup {
+    margin: 15px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.settings-subgroup h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.range-value {
+    display: inline-block;
+    min-width: 30px;
+    margin-left: 10px;
+    font-weight: bold;
+    color: #666;
+}

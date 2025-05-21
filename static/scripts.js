@@ -117,6 +117,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Update range values display
+    function updateRangeValue(inputId) {
+        const input = document.getElementById(inputId);
+        const valueDisplay = document.getElementById(inputId + '-value');
+        if (input && valueDisplay) {
+            valueDisplay.textContent = input.value;
+        }
+    }
+
+    // Initialize range value displays
+    const rangeInputs = [
+        'auto-min-clone-length',
+        'archetype-length'
+    ];
+    
+    rangeInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            updateRangeValue(inputId);
+            input.addEventListener('input', () => updateRangeValue(inputId));
+        }
+    });
+
+    // Update settings collection for automatic mode
+    function getAutomaticModeSettings() {
+        return {
+            minCloneLength: parseInt(document.getElementById('auto-min-clone-length').value),
+            convertToDRL: document.getElementById('convert-to-drl').checked,
+            archetypeLength: parseInt(document.getElementById('archetype-length').value),
+            strictFilter: document.getElementById('strict-filter').checked
+        };
+    }
+
     // Form submission handler
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -143,6 +176,8 @@ document.addEventListener('DOMContentLoaded', function() {
             settings = {
                 extension_point_checkbox: document.getElementById('extension-value').checked
             };
+        } else if (method === 'automatic-mode') {
+            settings = getAutomaticModeSettings();
         } else {
             alert('In current version this mode is not implemented');
             return;
@@ -155,6 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
             endpoint = 'http://localhost:8080/ngram';
         } else if (method === 'heuristic-mode') {
             endpoint = 'http://localhost:8080/heuristic';
+        } else if (method === 'automatic-mode') {
+            endpoint = 'http://localhost:8080/automatic';
         }
 
         try {
@@ -173,6 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} groups of duplicates\nResult: ${result.results_file}`;
             } else if (method === 'heuristic-mode') {
                 resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams\nResult: ${result.results_file}`;
+            } else if (method === 'automatic-mode') {
+                resultMessage = `Analysis completed!\nFound ${result.groups.length} groups of duplicates\nResult: ${result.results_file}`;
             }
             alert(resultMessage);
 

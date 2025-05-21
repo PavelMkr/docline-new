@@ -335,6 +335,126 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Get request:", r.Method, r.URL.Path)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := ensureResultsDir(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var settings AutomaticModeSettings
+	var filePath string
+	var uploadedTempFile bool = false
+
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/json") {
+		err := json.NewDecoder(r.Body).Decode(&settings)
+		if err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		filePath = settings.FilePath
+		fmt.Println("Using file path from JSON:", filePath)
+	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+			return
+		}
+
+		settingsStr := r.FormValue("settings")
+		fmt.Println("Settings:", settingsStr)
+		if err := json.Unmarshal([]byte(settingsStr), &settings); err != nil {
+			http.Error(w, "Failed to parse settings", http.StatusBadRequest)
+			return
+		}
+
+		file, handler, err := r.FormFile("file")
+		if err == nil {
+			defer file.Close()
+			filePath = filepath.Join("./results", handler.Filename)
+			dst, err := os.Create(filePath)
+			if err != nil {
+				http.Error(w, "Failed to create file", http.StatusInternalServerError)
+				return
+			}
+			defer dst.Close()
+			if _, err := io.Copy(dst, file); err != nil {
+				http.Error(w, "Failed to save file", http.StatusInternalServerError)
+				return
+			}
+			fmt.Println("File uploaded:", filePath)
+			uploadedTempFile = true
+		} else {
+			fmt.Println("Error getting file:", err)
+			return
+		}
+	} else {
+		http.Error(w, "Unsupported Content-Type", http.StatusBadRequest)
+		return
+	}
+
+	if filePath == "" {
+		http.Error(w, "File path is required", http.StatusBadRequest)
+		return
+	}
+
+	// Read and process file content
+	content, err := readFileContent(filePath)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
+		return
+	}
+
+	// Process content using automatic mode
+	groups, err := ProcessAutomaticMode(content, settings)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error processing content: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Format and save results
+	resultFilePath := "./results/automatic_results.txt"
+	resultData := FormatAutomaticModeResults(groups, settings)
+	if err := writeToFile(resultFilePath, resultData); err != nil {
+		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert groups to response format
+	responseGroups := make(map[string][]string)
+	for i, group := range groups {
+		groupKey := fmt.Sprintf("group%d", i+1)
+		var fragments []string
+		for _, frag := range group.Fragments {
+			fragments = append(fragments, frag.Content)
+		}
+		responseGroups[groupKey] = fragments
+	}
+
+	// Clean up temporary file if needed
+	if uploadedTempFile {
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("Failed to remove temp file: %s, Err: %v\n", filePath, err)
+		}
+	}
+
+	response := AutomaticModeResponse{
+		Status:      "success",
+		Message:     "Automatic mode analysis completed",
+		Groups:      responseGroups,
+		ResultsFile: resultFilePath,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func SendSettings(e ui.Event) string {
 	// json string
 	jsonStr, err := ui.GetArg[string](e)
@@ -361,6 +481,7 @@ func main() {
 		http.HandleFunc("/upload", uploadHandler)
 		http.HandleFunc("/heuristic", heuristicFinderHandler)
 		http.HandleFunc("/ngram", ngramFinderHandler)
+		http.HandleFunc("/automatic", automaticModeHandler)
 
 		fmt.Println("Starting server on :8080...")
 		if err := http.ListenAndServe(":8080", nil); err != nil {
