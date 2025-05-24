@@ -1,15 +1,14 @@
 # Duplicate Finder
 
-**Documentation Refactoring Toolkit** -- инструмент поиска клонов и рефакторинга документации в рамках проекта DocLine.
+**Documentation Refactoring Toolkit** -- a clone finder and documentation refactoring tool within the DocLine project.
 
-## Функционал
-### Режимы
+### Modes
 - **Automatic mode** 
 - **Interactive mode**
 - **Ngram Duplicate Finder**
 - **Heuristic Ngram Finder**
 
-### Поддерживаемые форматы файлов
+### Supported file formats
 - DocBook (.xml, .dbk, .docbook)
 - Microsoft Word (.doc, .docx)
 - OpenDocument Text (.odt)
@@ -18,7 +17,7 @@
 - Plain Text (.txt)
 - HTML (.html, .htm)
 
-## Требования
+## Requirements
 
 - **Go 1.23+**
-- **Pandoc** - для конвертации документов в формат DocBook
+- **Pandoc** - for converting documents to DocBook format
