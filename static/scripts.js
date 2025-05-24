@@ -215,7 +215,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                // check if the error is related to the file format
+                if (errorText.includes('unsupported file format')) {
+                    alert('Error: ' + errorText + '\n\nPlease select a file in one of the supported formats.');
+                } else {
+                    alert('Error: ' + errorText);
+                }
+                return;
             }
 
             const result = await response.json();
@@ -235,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // FIXME "Load failed" error in webUI 
             // alert('Error: ' + error.message);
             console.error('Error:', error);
+            alert('An error occurred while processing the file. Please try again.');
         }
     });
 });

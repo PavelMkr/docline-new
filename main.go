@@ -91,7 +91,9 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
+			fmt.Printf("Uploaded file: %s (original filename)\n", handler.Filename)
 			filePath = filepath.Join("./results", handler.Filename)
+			fmt.Printf("Full file path: %s\n", filePath)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
@@ -115,6 +117,12 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
+		return
+	}
+
+	// check file format
+	if err := validateFileFormat(filePath); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -191,7 +199,9 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
+			fmt.Printf("Uploaded file: %s (original filename)\n", handler.Filename)
 			filePath = filepath.Join("./results", handler.Filename)
+			fmt.Printf("Full file path: %s\n", filePath)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
@@ -215,6 +225,12 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
+		return
+	}
+
+	// check file format
+	if err := validateFileFormat(filePath); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -290,6 +306,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// Copy uploaded file content
 	if _, err := io.Copy(dst, file); err != nil {
 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	// check file format
+	if err := validateFileFormat(filePath); err != nil {
+		// remove uploaded file if the format is not supported
+		os.Remove(filePath)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -377,7 +401,9 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
+			fmt.Printf("Uploaded file: %s (original filename)\n", handler.Filename)
 			filePath = filepath.Join("./results", handler.Filename)
+			fmt.Printf("Full file path: %s\n", filePath)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
@@ -401,6 +427,12 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
+		return
+	}
+
+	// check file format
+	if err := validateFileFormat(filePath); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -497,7 +529,9 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("file")
 		if err == nil {
 			defer file.Close()
+			fmt.Printf("Uploaded file: %s (original filename)\n", handler.Filename)
 			filePath = filepath.Join("./results", handler.Filename)
+			fmt.Printf("Full file path: %s\n", filePath)
 			dst, err := os.Create(filePath)
 			if err != nil {
 				http.Error(w, "Failed to create file", http.StatusInternalServerError)
@@ -521,6 +555,12 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
+		return
+	}
+
+	// check file format
+	if err := validateFileFormat(filePath); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
