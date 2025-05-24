@@ -95,7 +95,7 @@ func (p *DocBookParser) extractText(element *DocBookElement, segments *[]string)
 		// process HTML entities in text content
 		text := html.UnescapeString(strings.TrimSpace(element.Content))
 		if text != "" {
-			fmt.Printf("Found text in element <%s>: %s\n", element.XMLName.Local, text[:min(len(text), 50)]+"...")
+			// fmt.Printf("Found text in element <%s>: %s\n", element.XMLName.Local, text[:min(len(text), 50)]+"...")
 			*segments = append(*segments, text)
 		}
 	}

@@ -1,3 +1,4 @@
+// FIXME find every 2 words in text
 package main
 
 

@@ -42,6 +42,97 @@ type UploadSettings struct {
 	SourceLanguage string `json:"source_language"`
 }
 
+// Common structures for analysis results
+type AnalysisResult struct {
+	Status      string              `json:"status"`
+	Message     string              `json:"message"`
+	Groups      map[string][]string `json:"groups,omitempty"`
+	Archetypes  map[string]string   `json:"archetypes,omitempty"`
+	ResultsFile string              `json:"results_file,omitempty"`
+}
+
+// FormatAnalysisResults formats the analysis results for output
+func FormatAnalysisResults(method string, groups []CloneGroup, settings interface{}) string {
+	var sb strings.Builder
+
+	// Write header based on method
+	switch method {
+	case "automatic":
+		sb.WriteString("Automatic Mode Analysis Results\n")
+		sb.WriteString("=============================\n\n")
+		if s, ok := settings.(AutomaticModeSettings); ok {
+			sb.WriteString(fmt.Sprintf("Settings:\n"))
+			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneLength))
+			sb.WriteString(fmt.Sprintf("- Convert to DRL: %v\n", s.ConvertToDRL))
+			sb.WriteString(fmt.Sprintf("- Minimal Archetype Length: %d tokens\n", s.ArchetypeLength))
+			sb.WriteString(fmt.Sprintf("- Strict Filtering: %v\n\n", s.StrictFilter))
+		}
+	case "interactive":
+		sb.WriteString("Interactive Mode Analysis Results\n")
+		sb.WriteString("===============================\n\n")
+		if s, ok := settings.(InteractiveModeSettings); ok {
+			sb.WriteString(fmt.Sprintf("Settings:\n"))
+			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneLength))
+			sb.WriteString(fmt.Sprintf("- Maximal Clone Length: %d tokens\n", s.MaxCloneLength))
+			sb.WriteString(fmt.Sprintf("- Minimal Group Power: %d clones\n", s.MinGroupPower))
+			sb.WriteString(fmt.Sprintf("- Archetype Calculation: %v\n\n", s.UseArchetype))
+		}
+	case "ngram":
+		sb.WriteString("N-Gram Analysis Results\n")
+		sb.WriteString("======================\n\n")
+		if s, ok := settings.(NgramDuplicateFinderData); ok {
+			sb.WriteString(fmt.Sprintf("Settings:\n"))
+			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneSlider))
+			sb.WriteString(fmt.Sprintf("- Max Edit Distance: %d\n", s.MaxEditSlider))
+			sb.WriteString(fmt.Sprintf("- Max Fuzzy Hash Distance: %d\n", s.MaxFuzzySlider))
+			sb.WriteString(fmt.Sprintf("- Source Language: %s\n\n", s.SourceLanguage))
+		}
+	case "heuristic":
+		sb.WriteString("Heuristic Analysis Results\n")
+		sb.WriteString("========================\n\n")
+		if s, ok := settings.(HeuristicNgramFinderData); ok {
+			sb.WriteString(fmt.Sprintf("Settings:\n"))
+			sb.WriteString(fmt.Sprintf("- Extension Point Check: %v\n\n", s.ExtensionPointCheckbox))
+		}
+	}
+
+	// Write groups
+	sb.WriteString(fmt.Sprintf("Found %d clone groups:\n\n", len(groups)))
+	for i, group := range groups {
+		sb.WriteString(fmt.Sprintf("Group %d (Power: %d):\n", i+1, group.Power))
+		if group.Archetype != "" {
+			sb.WriteString(fmt.Sprintf("Archetype: %s\n", group.Archetype))
+		}
+		sb.WriteString("Fragments:\n")
+		for j, frag := range group.Fragments {
+			sb.WriteString(fmt.Sprintf("  %d. [%d-%d] %s\n", j+1, frag.StartPos, frag.EndPos, frag.Content))
+		}
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
+
+// ConvertGroupsToResponse converts clone groups to response format
+func ConvertGroupsToResponse(groups []CloneGroup, useArchetypes bool) (map[string][]string, map[string]string) {
+	responseGroups := make(map[string][]string)
+	archetypes := make(map[string]string)
+
+	for i, group := range groups {
+		groupKey := fmt.Sprintf("group%d", i+1)
+		var fragments []string
+		for _, frag := range group.Fragments {
+			fragments = append(fragments, frag.Content)
+		}
+		responseGroups[groupKey] = fragments
+		if useArchetypes && group.Archetype != "" {
+			archetypes[groupKey] = group.Archetype
+		}
+	}
+
+	return responseGroups, archetypes
+}
+
 // ensureResultsDir ensures that the results directory exists
 func ensureResultsDir() error {
 	uploadDir := "./results"
@@ -134,27 +225,45 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	ngrams := HeuristicNgramAnalysis(data, text, 2)
 
+	// Convert ngrams to clone groups format
+	var groups []CloneGroup
+	for _, ngram := range ngrams {
+		group := CloneGroup{
+			Fragments: []TextFragment{{
+				Content:  ngram,
+				StartPos: 0, // TODO: Calculate actual positions
+				EndPos:   1,
+			}},
+			Power: 1,
+		}
+		groups = append(groups, group)
+	}
+
+	// Format and save results
 	resultFilePath := "./results/heuristic_results.txt"
-	resultData := fmt.Sprintf("Heuristic N-Grams: %v", ngrams)
+	resultData := FormatAnalysisResults("heuristic", groups, data)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// if multipart form, remove temp file
+	// Convert groups to response format
+	responseGroups, _ := ConvertGroupsToResponse(groups, false)
+
+	// Clean up temporary file if needed
 	if uploadedTempFile {
 		if err := os.Remove(filePath); err != nil {
 			fmt.Printf("Failed to remove temp file: %s, Err: %v\n", filePath, err)
 		}
 	}
 
-	response := map[string]interface{}{
-		"status":        "success",
-		"message":       "Heuristic finder processed",
-		"results_file":  resultFilePath,
-		"analyzed_file": filePath,
-		"ngrams":        ngrams,
+	response := AnalysisResult{
+		Status:      "success",
+		Message:     "Heuristic analysis completed",
+		Groups:      responseGroups,
+		ResultsFile: resultFilePath,
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -242,26 +351,49 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	parts := splitTextIntoParts(content)
 	duplicates := FindDuplicatesByNGram(data, parts)
-	resultFilePath := "./results/ngram_duplicates.txt"
-	resultData := fmt.Sprintf("Duplicates Found: %v", duplicates)
+
+	// Convert duplicates to clone groups format
+	var groups []CloneGroup
+	for _, fragments := range duplicates {
+		group := CloneGroup{
+			Fragments: make([]TextFragment, len(fragments)),
+			Power:     len(fragments),
+		}
+		for i, frag := range fragments {
+			group.Fragments[i] = TextFragment{
+				Content:  frag,
+				StartPos: i, // TODO: Calculate actual positions
+				EndPos:   i + 1,
+			}
+		}
+		groups = append(groups, group)
+	}
+
+	// Format and save results
+	resultFilePath := "./results/ngram_results.txt"
+	resultData := FormatAnalysisResults("ngram", groups, data)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// if multipart form, remove temp file
+	// Convert groups to response format
+	responseGroups, _ := ConvertGroupsToResponse(groups, false)
+
+	// Clean up temporary file if needed
 	if uploadedTempFile {
 		if err := os.Remove(filePath); err != nil {
 			fmt.Printf("Failed to remove temp file: %s, Err: %v\n", filePath, err)
 		}
 	}
 
-	response := map[string]interface{}{
-		"status":       "success",
-		"message":      "Ngram finder processed",
-		"results_file": resultFilePath,
-		"duplicates":   duplicates,
+	response := AnalysisResult{
+		Status:      "success",
+		Message:     "N-gram analysis completed",
+		Groups:      responseGroups,
+		ResultsFile: resultFilePath,
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -459,15 +591,7 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert groups to response format
-	responseGroups := make(map[string][]string)
-	for i, group := range groups {
-		groupKey := fmt.Sprintf("group%d", i+1)
-		var fragments []string
-		for _, frag := range group.Fragments {
-			fragments = append(fragments, frag.Content)
-		}
-		responseGroups[groupKey] = fragments
-	}
+	responseGroups, _ := ConvertGroupsToResponse(groups, false)
 
 	// Clean up temporary file if needed
 	if uploadedTempFile {
@@ -476,7 +600,7 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := AutomaticModeResponse{
+	response := AnalysisResult{
 		Status:      "success",
 		Message:     "Automatic mode analysis completed",
 		Groups:      responseGroups,
@@ -572,34 +696,31 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Process content using interactive mode
+	fmt.Printf("Starting interactive mode processing with settings: %+v\n", settings)
 	groups, err := ProcessInteractiveMode(content, settings)
 	if err != nil {
+		fmt.Printf("Error in ProcessInteractiveMode: %v\n", err)
 		http.Error(w, fmt.Sprintf("Error processing content: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("Interactive mode processing completed, found %d groups\n", len(groups))
 
 	// Format and save results
 	resultFilePath := "./results/interactive_results.txt"
+	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
 	resultData := FormatInteractiveModeResults(groups, settings)
+	fmt.Printf("Results formatted, data length: %d bytes\n", len(resultData))
+
+	fmt.Printf("Attempting to write results to file...\n")
 	if err := writeToFile(resultFilePath, resultData); err != nil {
+		fmt.Printf("Error writing to file: %v\n", err)
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("Successfully wrote results to file\n")
 
 	// Convert groups to response format
-	responseGroups := make(map[string][]string)
-	archetypes := make(map[string]string)
-	for i, group := range groups {
-		groupKey := fmt.Sprintf("group%d", i+1)
-		var fragments []string
-		for _, frag := range group.Fragments {
-			fragments = append(fragments, frag.Content)
-		}
-		responseGroups[groupKey] = fragments
-		if settings.UseArchetype {
-			archetypes[groupKey] = group.Archetype
-		}
-	}
+	responseGroups, archetypes := ConvertGroupsToResponse(groups, settings.UseArchetype)
 
 	// Clean up temporary file if needed
 	if uploadedTempFile {
@@ -608,7 +729,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := InteractiveModeResponse{
+	response := AnalysisResult{
 		Status:      "success",
 		Message:     "Interactive mode analysis completed",
 		Groups:      responseGroups,

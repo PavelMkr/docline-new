@@ -18,18 +18,44 @@ func GenerateNGrams(text string, n int) []string {
 	return ngrams
 }
 
-// writeToFile writes data to file.
+// writeToFile writes data to a file at the specified path
 func writeToFile(filePath string, data string) error {
+	fmt.Printf("writeToFile: Attempting to write to %s\n", filePath)
+	fmt.Printf("writeToFile: Data length: %d bytes\n", len(data))
+
+	// Ensure the directory exists
+	dir := filepath.Dir(filePath)
+	fmt.Printf("writeToFile: Ensuring directory exists: %s\n", dir)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		fmt.Printf("writeToFile: Failed to create directory: %v\n", err)
+		return fmt.Errorf("failed to create directory: %v", err)
+	}
+
+	// Create or truncate the file
+	fmt.Printf("writeToFile: Creating/truncating file\n")
 	file, err := os.Create(filePath)
 	if err != nil {
-		return err
+		fmt.Printf("writeToFile: Failed to create file: %v\n", err)
+		return fmt.Errorf("failed to create file: %v", err)
 	}
 	defer file.Close()
 
-	_, err = file.WriteString(data)
+	// Write data to file
+	fmt.Printf("writeToFile: Writing data to file\n")
+	bytesWritten, err := file.WriteString(data)
 	if err != nil {
-		return err
+		fmt.Printf("writeToFile: Failed to write data: %v\n", err)
+		return fmt.Errorf("failed to write data: %v", err)
 	}
+	fmt.Printf("writeToFile: Successfully wrote %d bytes to file\n", bytesWritten)
+
+	// Ensure data is written to disk
+	if err := file.Sync(); err != nil {
+		fmt.Printf("writeToFile: Failed to sync file: %v\n", err)
+		return fmt.Errorf("failed to sync file: %v", err)
+	}
+
+	fmt.Printf("writeToFile: File write completed successfully\n")
 	return nil
 }
 

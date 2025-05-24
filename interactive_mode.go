@@ -25,59 +25,87 @@ type InteractiveModeResponse struct {
 
 // findInteractiveClones finds similar text fragments using interactive mode settings
 func findInteractiveClones(text string, settings InteractiveModeSettings) []CloneGroup {
+	fmt.Printf("Starting clone search with settings: minLength=%d, maxLength=%d, minPower=%d\n",
+		settings.MinCloneLength, settings.MaxCloneLength, settings.MinGroupPower)
+
 	// Split text into tokens
 	tokens := strings.Fields(text)
-	if len(tokens) < settings.MinCloneLength {
+	tokenCount := len(tokens)
+	fmt.Printf("Text split into %d tokens\n", tokenCount)
+
+	if tokenCount < settings.MinCloneLength {
+		fmt.Printf("Text is too short (less than %d tokens)\n", settings.MinCloneLength)
 		return nil
 	}
 
-	var groups []CloneGroup
+	// Use a map to store potential clones by their content
+	potentialClones := make(map[string][]TextFragment)
 	maxLength := settings.MaxCloneLength
 	if maxLength <= 0 {
-		maxLength = len(tokens) // If maxLength is not set, use the entire text
+		maxLength = tokenCount
 	}
 
-	// Create sliding windows of different sizes
+	// Process each possible window size
 	for length := settings.MinCloneLength; length <= maxLength; length++ {
-		for i := 0; i <= len(tokens)-length; i++ {
+		fmt.Printf("Processing windows of size %d...\n", length)
+		windowCount := tokenCount - length + 1
+		processedWindows := 0
+
+		// Create sliding windows of current size
+		for i := 0; i <= tokenCount-length; i++ {
 			window := tokens[i : i+length]
 			windowText := strings.Join(window, " ")
 
-			// Check if this window is similar to any existing group
-			found := false
-			for j := range groups {
-				if isSimilarInteractive(windowText, groups[j].Archetype) {
-					groups[j].Fragments = append(groups[j].Fragments, TextFragment{
-						Content:  windowText,
-						StartPos: i,
-						EndPos:   i + length,
-					})
-					groups[j].Power++
-					found = true
-					break
+			// Add to potential clones
+			potentialClones[windowText] = append(potentialClones[windowText], TextFragment{
+				Content:  windowText,
+				StartPos: i,
+				EndPos:   i + length,
+			})
+
+			processedWindows++
+			if processedWindows%1000 == 0 {
+				fmt.Printf("Processed %d/%d windows of size %d\n", processedWindows, windowCount, length)
+			}
+		}
+	}
+
+	fmt.Printf("Found %d unique text fragments\n", len(potentialClones))
+
+	// Convert potential clones to groups
+	var groups []CloneGroup
+	for text, fragments := range potentialClones {
+		if len(fragments) >= settings.MinGroupPower {
+			// Remove overlapping fragments
+			var nonOverlapping []TextFragment
+			for i, frag := range fragments {
+				overlaps := false
+				for j := 0; j < i; j++ {
+					if hasOverlap(frag, fragments[j]) {
+						overlaps = true
+						break
+					}
+				}
+				if !overlaps {
+					nonOverlapping = append(nonOverlapping, frag)
 				}
 			}
 
-			// If no similar group found, create a new one
-			if !found {
+			if len(nonOverlapping) >= settings.MinGroupPower {
 				groups = append(groups, CloneGroup{
-					Fragments: []TextFragment{{
-						Content:  windowText,
-						StartPos: i,
-						EndPos:   i + length,
-					}},
-					Archetype: windowText,
-					Power:     1,
+					Fragments: nonOverlapping,
+					Archetype: text,
+					Power:     len(nonOverlapping),
 				})
 			}
 		}
 	}
 
-	// Filter groups based on settings
-	groups = filterInteractiveGroups(groups, settings)
+	fmt.Printf("Found %d clone groups after filtering\n", len(groups))
 
 	// Calculate archetypes if enabled
 	if settings.UseArchetype {
+		fmt.Printf("Calculating archetypes...\n")
 		calculateArchetypes(&groups)
 	}
 
@@ -86,8 +114,8 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 
 // isSimilarInteractive checks if two text fragments are similar enough for interactive mode
 func isSimilarInteractive(a, b string) bool {
+	// For now, use exact string comparison
 	// TODO: Implement fuzzy matching for interactive mode
-	// For now, use simple string comparison
 	return a == b
 }
 
