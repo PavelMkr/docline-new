@@ -779,6 +779,9 @@ func main() {
 	// UI
 	// Create a window.
 	w := ui.NewWindow()
+	// Set window size
+	w.SetSize(800, 800)
+	w.SetMinimumSize(400, 800) 
 	// Bind a Go function.
 	ui.Bind(w, "SendSettings", SendSettings)
 	// Show frontend.
