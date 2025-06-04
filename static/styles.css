@@ -79,3 +79,175 @@ button:hover {
     font-weight: bold;
     color: #666;
 }
+
+/* Interactive Mode Results Styles */
+.results-container {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.results-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.results-controls button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.results-controls button:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.result-group {
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.group-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.toggle-group {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.group-content {
+    padding: 15px;
+}
+
+.archetype {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.archetype h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+}
+
+.archetype pre {
+    margin: 0;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.fragments {
+    margin-bottom: 15px;
+}
+
+.fragments h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+}
+
+.fragments ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fragments li {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.fragment-number {
+    color: #666;
+    font-weight: bold;
+    min-width: 25px;
+}
+
+.fragments pre {
+    margin: 0;
+    flex: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.group-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.group-actions button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.group-actions button:hover {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+.delete-group {
+    color: #dc3545;
+}
+
+.delete-group:hover {
+    background-color: #dc3545 !important;
+    color: #fff;
+    border-color: #dc3545 !important;
+}
+
+.merge-group {
+    color: #0d6efd;
+}
+
+.merge-group:hover {
+    background-color: #0d6efd !important;
+    color: #fff;
+    border-color: #0d6efd !important;
+}

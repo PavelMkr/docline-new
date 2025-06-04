@@ -160,6 +160,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // Initialize results display
+    const resultsContainer = document.getElementById('results-container');
+    const interactiveResults = new InteractiveResults('results-container');
+    interactiveResults.init();
+
     // Form submission handler
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -170,6 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select a file to analyze');
             return;
         }
+
+        // Hide results container initially
+        resultsContainer.style.display = 'none';
 
         const formData = new FormData();
         formData.append('file', sourceFile);
@@ -226,17 +234,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            let resultMessage = '';
-            if (method === 'ngram-duplicate-finder') {
-                resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} groups of duplicates\nResult: ${result.results_file}`;
-            } else if (method === 'heuristic-mode') {
-                resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams\nResult: ${result.results_file}`;
-            } else if (method === 'automatic-mode') {
-                resultMessage = `Analysis completed!\nFound ${Object.keys(result.groups).length} groups of duplicates\nResult: ${result.results_file}`;
-            } else if (method === 'interactive-mode') {
-                resultMessage = `Analysis completed!\nFound ${Object.keys(result.groups).length} groups of duplicates\nResult: ${result.results_file}`;
+            
+            if (method === 'interactive-mode') {
+                // Display results in the interactive view
+                interactiveResults.displayResults(result);
+                resultsContainer.style.display = 'block';
+                
+                // Scroll to results
+                resultsContainer.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // Show alert for other modes
+                let resultMessage = '';
+                if (method === 'ngram-duplicate-finder') {
+                    resultMessage = `Analysis completed!\nFound ${Object.keys(result.duplicates).length} groups of duplicates\nResult: ${result.results_file}`;
+                } else if (method === 'heuristic-mode') {
+                    resultMessage = `Analysis completed!\nFound ${result.ngrams.length} n-grams\nResult: ${result.results_file}`;
+                } else if (method === 'automatic-mode') {
+                    resultMessage = `Analysis completed!\nFound ${Object.keys(result.groups).length} groups of duplicates\nResult: ${result.results_file}`;
+                }
+                alert(resultMessage);
             }
-            alert(resultMessage);
 
         } catch (error) {
             // FIXME "Load failed" error in webUI 
