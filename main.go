@@ -142,6 +142,17 @@ func ensureResultsDir() error {
 	return nil
 }
 
+// generateResultsFileName create results file name based on input file and mode
+func generateResultsFileName(inputPath, mode string) string {
+	// Get file name without path and extension
+	baseName := filepath.Base(inputPath)
+	ext := filepath.Ext(baseName)
+	nameWithoutExt := baseName[:len(baseName)-len(ext)]
+
+	// Form new file name
+	return fmt.Sprintf("%s_%s_results.txt", nameWithoutExt, mode)
+}
+
 func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Get request:", r.Method, r.URL.Path)
 	if r.Method != http.MethodPost {
@@ -240,7 +251,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results
-	resultFilePath := "./results/heuristic_results.txt"
+	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "heuristic"))
 	resultData := FormatAnalysisResults("heuristic", groups, data)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
@@ -370,7 +381,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results
-	resultFilePath := "./results/ngram_results.txt"
+	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "ngram"))
 	resultData := FormatAnalysisResults("ngram", groups, data)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
@@ -583,8 +594,8 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results
-	resultFilePath := "./results/automatic_results.txt"
-	resultData := FormatAutomaticModeResults(groups, settings)
+	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "automatic"))
+	resultData := FormatAnalysisResults("automatic", groups, settings)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
@@ -706,7 +717,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Interactive mode processing completed, found %d groups\n", len(groups))
 
 	// Format and save results
-	resultFilePath := "./results/interactive_results.txt"
+	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "interactive"))
 	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
 	resultData := FormatInteractiveModeResults(groups, settings)
 	fmt.Printf("Results formatted, data length: %d bytes\n", len(resultData))
@@ -781,7 +792,7 @@ func main() {
 	w := ui.NewWindow()
 	// Set window size
 	w.SetSize(800, 800)
-	w.SetMinimumSize(400, 800) 
+	w.SetMinimumSize(400, 800)
 	// Bind a Go function.
 	ui.Bind(w, "SendSettings", SendSettings)
 	// Show frontend.
