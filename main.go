@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	ui "github.com/webui-dev/go-webui/v2"
 )
 
 // HeuristicNgram
@@ -752,51 +750,24 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func SendSettings(e ui.Event) string {
-	// json string
-	jsonStr, err := ui.GetArg[string](e)
-	if err != nil {
-		return fmt.Sprintf("Error getting argument: %v", err)
-	}
-
-	// json to map
-	var settings map[string]interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &settings); err != nil {
-		return fmt.Sprintf("Error parsing JSON: %v", err)
-	}
-
-	// print data
-	fmt.Printf("Received settings: %+v\n", settings)
-
-	// FIXME unnessesarry return
-	return "Settings received and parsed successfully"
+// RegisterRoutes registers all HTTP routes on the given ServeMux
+func RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/upload", uploadHandler)
+	mux.HandleFunc("/heuristic", heuristicFinderHandler)
+	mux.HandleFunc("/ngram", ngramFinderHandler)
+	mux.HandleFunc("/automatic", automaticModeHandler)
+	mux.HandleFunc("/interactive", interactiveModeHandler)
 }
 
 func main() {
 	// Start HTTP server in a goroutine
 	go func() {
-		http.HandleFunc("/upload", uploadHandler)
-		http.HandleFunc("/heuristic", heuristicFinderHandler)
-		http.HandleFunc("/ngram", ngramFinderHandler)
-		http.HandleFunc("/automatic", automaticModeHandler)
-		http.HandleFunc("/interactive", interactiveModeHandler)
-
+		mux := http.NewServeMux()
+		RegisterRoutes(mux)
 		fmt.Println("Starting server on :8080...")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		if err := http.ListenAndServe(":8080", mux); err != nil {
 			fmt.Printf("Error starting server: %v\n", err)
 		}
 	}()
-
-	// UI
-	// Create a window.
-	w := ui.NewWindow()
-	// Set window size
-	w.SetSize(800, 800)
-	w.SetMinimumSize(400, 800)
-	// Bind a Go function.
-	ui.Bind(w, "SendSettings", SendSettings)
-	// Show frontend.
-	w.Show("index.html")
-	// Wait until all windows get closed.
-	ui.Wait()
+	// UI logic in ui_main.go
 }
