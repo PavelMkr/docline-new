@@ -228,6 +228,10 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	text, err := readFileContent(filePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, fmt.Sprintf("File not found: %s", filePath), http.StatusBadRequest)
+			return
+		}
 		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
