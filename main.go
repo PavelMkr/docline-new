@@ -773,5 +773,8 @@ func main() {
 			fmt.Printf("Error starting server: %v\n", err)
 		}
 	}()
-	// UI logic in ui_main.go
+
+	// Start UI after server
+	fmt.Println("Starting UI...")
+	startUI()
 }

@@ -10,7 +10,7 @@ import (
 	ui "github.com/webui-dev/go-webui/v2"
 )
 
-func init() {
+func startUI() {
 	// UI
 	w := ui.NewWindow()
 	w.SetSize(800, 800)
