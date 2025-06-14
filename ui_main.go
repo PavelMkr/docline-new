@@ -1,5 +1,5 @@
-//go:build !ui_test
-// +build !ui_test
+//go:build !integration_test
+// +build !integration_test
 
 package main
 
