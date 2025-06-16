@@ -21,3 +21,8 @@
 
 - **Go 1.23+**
 - **Pandoc** - for converting documents to DocBook format
+
+## Usage
+```
+go run .
+```
