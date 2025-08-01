@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -237,6 +238,98 @@ func TestIntegration_ErrorHandling(t *testing.T) {
 				t.Errorf("Expected status %d, got %d for test case %s",
 					tc.expectedStatus, resp.StatusCode, tc.name)
 			}
+		})
+	}
+}
+
+func TestIntegration_RealDocBookFile(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux)
+
+	// create correct XML file for testing
+	tmpFile, err := os.CreateTemp("", "test_docbook_*.xml")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// create correct DocBook XML for testing
+	testDocBookContent := `<?xml version="1.0" encoding="UTF-8"?>
+<book>
+	<title>Test Documentation</title>
+	<chapter>
+		<title>Introduction</title>
+		<para>This is a test chapter for documentation processing.</para>
+		<para>It contains multiple paragraphs to test the parser.</para>
+	</chapter>
+	<chapter>
+		<title>Advanced Topics</title>
+		<para>This chapter covers advanced topics in documentation.</para>
+		<section>
+			<title>Subsection</title>
+			<para>This is a subsection with additional content.</para>
+		</section>
+	</chapter>
+</book>`
+
+	// write to temporary file
+	if _, err := tmpFile.WriteString(testDocBookContent); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	tmpFile.Close()
+
+	testCases := []struct {
+		name           string
+		endpoint       string
+		expectedStatus int
+	}{
+		{
+			name:           "Heuristic processing of real DocBook file",
+			endpoint:       "/heuristic",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Ngram processing of real DocBook file",
+			endpoint:       "/ngram",
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			requestBody := fmt.Sprintf(`{"extension_point_checkbox": true, "file_path": "%s"}`, tmpFile.Name())
+			body := strings.NewReader(requestBody)
+
+			req := httptest.NewRequest("POST", tc.endpoint, body)
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			mux.ServeHTTP(w, req)
+			resp := w.Result()
+
+			if resp.StatusCode != tc.expectedStatus {
+				t.Errorf("Expected status %d, got %d for test case %s", tc.expectedStatus, resp.StatusCode, tc.name)
+			}
+
+			// check that we got a response
+			if resp.Body == nil {
+				t.Error("Expected response body, got nil")
+				return
+			}
+
+			// read response
+			responseBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Errorf("Failed to read response body: %v", err)
+				return
+			}
+
+			// check that response is not empty
+			if len(responseBody) == 0 {
+				t.Error("Expected non-empty response body")
+			}
+
+			t.Logf("Response from %s: %s", tc.endpoint, string(responseBody[:min(len(responseBody), 200)]))
 		})
 	}
 }
