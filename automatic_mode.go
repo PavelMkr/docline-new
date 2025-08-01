@@ -188,7 +188,7 @@ func FormatAutomaticModeResults(groups []CloneGroup, settings AutomaticModeSetti
 	for i, group := range groups {
 		sb.WriteString(fmt.Sprintf("Group %d (Power: %d):\n", i+1, group.Power))
 		sb.WriteString(fmt.Sprintf("Archetype: %s\n", group.Archetype))
-		sb.WriteString("Fragments:\n")
+		sb.WriteString("Fragments (in tokens):\n")
 		for j, frag := range group.Fragments {
 			sb.WriteString(fmt.Sprintf("  %d. [%d-%d] %s\n", j+1, frag.StartPos, frag.EndPos, frag.Content))
 		}
