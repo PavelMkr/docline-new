@@ -28,12 +28,18 @@
                 <!-- Fuzzy Finder Settings -->
                 <div id="ngram-settings" class="settings-group" style="display:block;">
                     <h2>Fuzzy Finder Settings</h2>
-                    <label for="min-clone-length">Minimal clone length (tokens):</label>
-                    <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
-                    <label for="max-edit-distance">Maximal edit distance (Levenshtein):</label>
-                    <input type="range" id="max-edit-distance" name="max-edit-distance" min="0" max="20" value="9">
-                    <label for="max-fuzzy-hash-distance">Maximal fuzzy hash distance:</label>
-                    <input type="range" id="max-fuzzy-hash-distance" name="max-fuzzy-hash-distance" min="0" max="10" value="2">
+                    <div class="range-container">
+                        <label for="min-clone-length">Minimal clone length (tokens):</label>
+                        <input type="range" id="min-clone-length" name="min-clone-length" min="1" max="50" value="25">
+                    </div>
+                    <div class="range-container">
+                        <label for="max-edit-distance">Maximal edit distance (Levenshtein):</label>
+                        <input type="range" id="max-edit-distance" name="max-edit-distance" min="0" max="20" value="9">
+                    </div>
+                    <div class="range-container">
+                        <label for="max-fuzzy-hash-distance">Maximal fuzzy hash distance:</label>
+                        <input type="range" id="max-fuzzy-hash-distance" name="max-fuzzy-hash-distance" min="0" max="10" value="2">
+                    </div>
                     <label for="source-language">Source document language:</label>
                     <select id="source-language" name="source-language">
                         <option value="english">English</option>
@@ -44,12 +50,18 @@
                 <!-- Interactive Mode Settings -->
                 <div id="interactive-settings" class="settings-group" style="display:none;">
                     <h2>Interactive Mode Settings</h2>
-                    <label for="interactive-min-length">Minimal clone length (tokens):</label>
-                    <input type="range" id="interactive-min-length" name="interactive-min-length" min="1" max="50" value="20">
-                    <label for="interactive-max-length">Maximal clone length (tokens):</label>
-                    <input type="range" id="interactive-max-length" name="interactive-max-length" min="1" max="100" value="50">
-                    <label for="group-power">Minimal group power (number of clones):</label>
-                    <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
+                    <div class="range-container">
+                        <label for="interactive-min-length">Minimal clone length (tokens):</label>
+                        <input type="range" id="interactive-min-length" name="interactive-min-length" min="1" max="50" value="20">
+                    </div>
+                    <div class="range-container">
+                        <label for="interactive-max-length">Maximal clone length (tokens):</label>
+                        <input type="range" id="interactive-max-length" name="interactive-max-length" min="1" max="100" value="50">
+                    </div>
+                    <div class="range-container">
+                        <label for="group-power">Minimal group power (number of clones):</label>
+                        <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
+                    </div>
                     <label for="archetype">
                         Archetype calculation:
                         <input type="checkbox" id="archetype" name="archetype">
@@ -63,12 +75,11 @@
                     
                     <h3>Clone Miner & Preprocessing</h3>
                     <div class="settings-subgroup">
-                        <label for="auto-min-clone-length">Minimal Clone length (tokens):</label>
-                        <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="20" value="5">
-                        <span class="range-value" id="auto-min-clone-length-value">5</span>
-                    </div>
-                    
-                    <div class="settings-subgroup">
+                        <div class="range-container">
+                            <label for="auto-min-clone-length">Minimal Clone length (tokens):</label>
+                            <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="20" value="5">
+                        </div>
+                        
                         <label for="convert-to-drl">
                             Convert to DRL:
                             <input type="checkbox" id="convert-to-drl" name="convert-to-drl" checked>
@@ -77,9 +88,10 @@
 
                     <h3>Filtering</h3>
                     <div class="settings-subgroup">
-                        <label for="archetype-length">Minimal archetype length (tokens):</label>
-                        <input type="range" id="archetype-length" name="archetype-length" min="1" max="20" value="3">
-                        <span class="range-value" id="archetype-length-value">3</span>
+                        <div class="range-container">
+                            <label for="archetype-length">Minimal archetype length (tokens):</label>
+                            <input type="range" id="archetype-length" name="archetype-length" min="1" max="20" value="3">
+                        </div>
                         
                         <label for="strict-filter">
                             Strict small and overlapping duplicate filtering:

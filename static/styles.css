@@ -36,6 +36,88 @@ input, select, button {
     box-sizing: border-box;
 }
 
+/* Enhanced range input styles */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: #e0e0e0;
+    outline: none;
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+/* Range value display styles */
+.range-value {
+    display: inline-block;
+    min-width: 40px;
+    margin-left: 15px;
+    padding: 4px 8px;
+    font-weight: bold;
+    color: #007bff;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.range-value:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* Range input container for better layout */
+.range-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.range-container label {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.range-container input[type="range"] {
+    flex: 2;
+    margin: 0;
+}
+
 button {
     background-color: #007bff;
     color: white;
@@ -70,14 +152,6 @@ button:hover {
     margin-bottom: 10px;
     color: #333;
     font-size: 1.1em;
-}
-
-.range-value {
-    display: inline-block;
-    min-width: 30px;
-    margin-left: 10px;
-    font-weight: bold;
-    color: #666;
 }
 
 /* Interactive Mode Results Styles */

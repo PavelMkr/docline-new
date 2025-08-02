@@ -33,6 +33,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Function to create value display elements for range inputs
+    function createRangeValueDisplays() {
+        const rangeInputs = document.querySelectorAll('input[type="range"]');
+        
+        rangeInputs.forEach(input => {
+            // Check if value display already exists
+            const existingDisplay = document.getElementById(input.id + '-value');
+            if (existingDisplay) return;
+            
+            // Create value display element
+            const valueDisplay = document.createElement('span');
+            valueDisplay.id = input.id + '-value';
+            valueDisplay.className = 'range-value';
+            valueDisplay.textContent = input.value;
+            
+            // Insert after the input within its container
+            const container = input.closest('.range-container');
+            if (container) {
+                // Insert after the input within the range-container
+                input.parentNode.insertBefore(valueDisplay, input.nextSibling);
+            } else {
+                // Fallback: insert after the input
+                input.parentNode.insertBefore(valueDisplay, input.nextSibling);
+            }
+            
+            // Add event listener for real-time updates
+            input.addEventListener('input', function() {
+                valueDisplay.textContent = this.value;
+            });
+        });
+    }
+
     // Function to save current form values
     function saveCurrentFormValues(method) {
         const values = {};
@@ -75,6 +107,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     element.value = values[id];
                 }
+                // Update value display if it's a range input
+                if (element.type === 'range') {
+                    const valueDisplay = document.getElementById(id + '-value');
+                    if (valueDisplay) {
+                        valueDisplay.textContent = element.value;
+                    }
+                }
             }
         });
     }
@@ -114,10 +153,15 @@ document.addEventListener('DOMContentLoaded', function() {
             formTitle.textContent = selectedSettings.title;
             submitButton.textContent = selectedSettings.button;
             restoreFormValues(method);
+            
+            // Create value displays for the newly shown settings
+            setTimeout(() => {
+                createRangeValueDisplays();
+            }, 100);
         }
     });
 
-    // Update range values display
+    // Update range values display (legacy function - kept for compatibility)
     function updateRangeValue(inputId) {
         const input = document.getElementById(inputId);
         const valueDisplay = document.getElementById(inputId + '-value');
@@ -126,7 +170,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize range value displays
+    // Initialize range value displays for all range inputs
+    createRangeValueDisplays();
+
+    // Legacy initialization for specific inputs (kept for compatibility)
     const rangeInputs = [
         'auto-min-clone-length',
         'archetype-length'
