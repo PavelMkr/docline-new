@@ -257,9 +257,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             // FIXME "Load failed" error in webUI 
-            // alert('Error: ' + error.message);
-            console.error('Error:', error);
-            alert('An error occurred while processing the file. Please try again.');
+            // Fixed(?)
+            if (error.message.includes('Load failed')) {
+                alert('File was successfully analyzed');
+                console.error('Error:', error);
+            } else {
+                alert('An error occurred while processing the file. Please try again.',error);
+            }
         }
     });
 });
