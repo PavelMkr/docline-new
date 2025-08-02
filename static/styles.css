@@ -54,13 +54,13 @@ input[type="range"]::-webkit-slider-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #007bff;
+    background: #e95420;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-    background: #0056b3;
+    background: #e95420;
     transform: scale(1.1);
 }
 
@@ -68,14 +68,14 @@ input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #007bff;
+    background: #e95420;
     cursor: pointer;
     border: none;
     transition: all 0.2s ease;
 }
 
 input[type="range"]::-moz-range-thumb:hover {
-    background: #0056b3;
+    background: #e95420;
     transform: scale(1.1);
 }
 
@@ -86,7 +86,7 @@ input[type="range"]::-moz-range-thumb:hover {
     margin-left: 15px;
     padding: 4px 8px;
     font-weight: bold;
-    color: #007bff;
+    color: #e95420;
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -119,7 +119,7 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 button {
-    background-color: #007bff;
+    background-color: #e95420;
     color: white;
     border: none;
     cursor: pointer;
@@ -127,7 +127,7 @@ button {
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #e95420;
 }
 
 .settings-group {
@@ -317,11 +317,11 @@ button:hover {
 }
 
 .merge-group {
-    color: #0d6efd;
+    color: #e95420;
 }
 
 .merge-group:hover {
-    background-color: #0d6efd !important;
+    background-color: #e95420 !important;
     color: #fff;
-    border-color: #0d6efd !important;
+    border-color: #e95420 !important;
 }
