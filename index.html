@@ -62,11 +62,10 @@
                         <label for="group-power">Minimal group power (number of clones):</label>
                         <input type="range" id="group-power" name="group-power" min="1" max="10" value="2">
                     </div>
-                    <label for="archetype">
-                        Archetype calculation:
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="archetype" style="margin: 0;">Archetype calculation:</label>
                         <input type="checkbox" id="archetype" name="archetype">
-                        
-                    </label>
+                    </div>
                 </div>
 
                 <!-- Automatic Mode Settings -->
@@ -79,11 +78,10 @@
                             <label for="auto-min-clone-length">Minimal Clone length (tokens):</label>
                             <input type="range" id="auto-min-clone-length" name="auto-min-clone-length" min="1" max="20" value="5">
                         </div>
-                        
-                        <label for="convert-to-drl">
-                            Convert to DRL:
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label for="convert-to-drl" style="margin: 0;">Convert to DRL:</label>
                             <input type="checkbox" id="convert-to-drl" name="convert-to-drl" checked>
-                        </label>
+                        </div>
                     </div>
 
                     <h3>Filtering</h3>
@@ -93,20 +91,20 @@
                             <input type="range" id="archetype-length" name="archetype-length" min="1" max="20" value="3">
                         </div>
                         
-                        <label for="strict-filter">
-                            Strict small and overlapping duplicate filtering:
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label for="strict-filter" style="margin: 0;">Strict small and overlapping duplicate filtering:</label>
                             <input type="checkbox" id="strict-filter" name="strict-filter" checked>
-                        </label>
+                        </div>
                     </div>
                 </div>
 
                 <!-- heuristic Mode Settings -->
                 <div id="heuristic-settings" class="settings-group" style="display:none;">
                     <h2>Heuristic Mode Settings</h2>
-                    <label for="extension-value">
-                        Extension point values:
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="extension-value" style="margin: 0;">Extension point values:</label>
                         <input type="checkbox" id="extension-value" name="extension-value" checked>
-                    </label>
+                    </div>
                 </div>
 
                 <!-- File Input -->
