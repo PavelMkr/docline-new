@@ -22,19 +22,7 @@ type AutomaticModeResponse struct {
 	ResultsFile string              `json:"results_file,omitempty"`
 }
 
-// TextFragment represents a fragment of text with its position
-type TextFragment struct {
-	Content  string
-	StartPos int
-	EndPos   int
-}
 
-// CloneGroup represents a group of similar text fragments
-type CloneGroup struct {
-	Fragments []TextFragment
-	Archetype string
-	Power     int // Number of fragments in the group
-}
 
 // convertToDRL converts text to DRL format
 func convertToDRL(text string) string {

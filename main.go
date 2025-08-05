@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-
-
-
-
 // FileUploadResponse represents the response on file upload
 type FileUploadResponse struct {
 	Status     string              `json:"status"`
@@ -37,6 +33,37 @@ type AnalysisResult struct {
 	Groups      map[string][]string `json:"groups,omitempty"`
 	Archetypes  map[string]string   `json:"archetypes,omitempty"`
 	ResultsFile string              `json:"results_file,omitempty"`
+}
+
+type CloneGroup struct {
+    Fragments []TextFragment
+    Power     int
+    Archetype string
+}
+
+type TextFragment struct {
+    Content  string
+    StartPos int
+    EndPos   int
+}
+
+func convertNGramResultsToGroups(ngramResults map[string][]string) []CloneGroup {
+    var groups []CloneGroup
+    for _, fragments := range ngramResults {
+        group := CloneGroup{
+            Fragments: make([]TextFragment, len(fragments)),
+            Power:     len(fragments),
+        }
+        for i, frag := range fragments {
+            group.Fragments[i] = TextFragment{
+                Content:  frag,
+                StartPos: 0, // You'll need to calculate these
+                EndPos:   len(frag),
+            }
+        }
+        groups = append(groups, group)
+    }
+    return groups
 }
 
 // FormatAnalysisResults formats the analysis results for output
@@ -356,7 +383,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	duplicates := FindDuplicatesByNGram(data, parts)
 
 	// Convert duplicates to clone groups format
-	var groups []CloneGroup
+	groups := convertNGramResultsToGroups(duplicates)
 	for _, fragments := range duplicates {
 		group := CloneGroup{
 			Fragments: make([]TextFragment, len(fragments)),
@@ -757,12 +784,15 @@ func main() {
 	// CLI flags
 	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
 	cliInter := flag.Bool("cli-interactive", false, "Run in interactive mode (CLI)")
-	cliNGram := flag.Bool("cli-heuristic",false,"Run in heuristic ngram mode (CLI)")
+	cliNGram := flag.Bool("cli-ngram",false,"Run in ngram duplicate mode (CLI)")
 
 	input := flag.String("input", "", "Input file path")
 	minClone := flag.Int("minClone", 20, "Minimal clone length (tokens)")
 	maxClone := flag.Int("maxClone", 50, "Maximal clone length (tokens)")
+	maxEdit := flag.Int("maxEdit", 9,"Maximal edit distance (Levenshtein)")
+	maxDist := flag.Int("maxDist",2,"Maximal fuzzy hash distance")
 	minGroup := flag.Int("minGroup",2,"Minimal Group Power (number of clones)")
+	sourceLang := flag.String("source-language","english","Source document language")
 	useArch := flag.Bool("use-archetype",false,"Archetype calculation")
 	archetype := flag.Int("archetype", 5, "Minimal archetype length (tokens) [auto mode]")
 	strict := flag.Bool("strict", true, "Strict filtering [auto mode]")
@@ -824,6 +854,26 @@ func main() {
 			}
 			resultData := FormatAnalysisResults("interactive", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "interactive"))
+			if err := writeToFile(resultFile, resultData); err != nil {
+				fmt.Println("Failed to write result:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Analysis complete. Results saved to:", resultFile)
+			return
+		}
+		if *cliNGram {
+			settings := NgramDuplicateFinderData{
+				MinCloneSlider:  *minClone,
+				MaxEditSlider:   *maxDist,
+				MaxFuzzySlider:  *maxEdit,
+				SourceLanguage:  *sourceLang,
+				FilePath:        *input,
+			}
+			parts := splitTextIntoParts(content)
+			duplicates := FindDuplicatesByNGram(settings, parts)
+			groups := convertNGramResultsToGroups(duplicates)
+			resultData := FormatAnalysisResults("ngram", groups, settings)
+			resultFile := filepath.Join("./results", generateResultsFileName(*input, "ngram"))
 			if err := writeToFile(resultFile, resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
