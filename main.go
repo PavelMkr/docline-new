@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -764,6 +765,57 @@ func RegisterRoutes(mux *http.ServeMux) {
 }
 
 func main() {
+	// CLI flags
+	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
+	input := flag.String("input", "", "Input file path")
+	minClone := flag.Int("minClone", 10, "Minimal clone length (tokens)")
+	archetype := flag.Int("archetype", 5, "Minimal archetype length (tokens) [auto mode]")
+	strict := flag.Bool("strict", false, "Strict filtering [auto mode]")
+	convertToDRL := flag.Bool("drl", false, "Convert to DRL [auto mode]")
+	flag.Parse()
+
+	if *cliAuto {
+		if *input == "" {
+			fmt.Println("Error: --input is required")
+			os.Exit(1)
+		}
+		if err := ensureResultsDir(); err != nil {
+			fmt.Println("Failed to create results dir:", err)
+			os.Exit(1)
+		}
+		if err := validateFileFormat(*input); err != nil {
+			fmt.Println("File format error:", err)
+			os.Exit(1)
+		}
+		content, err := readFileContent(*input)
+		if err != nil {
+			fmt.Println("Failed to read file:", err)
+			os.Exit(1)
+		}
+		if *cliAuto {
+			settings := AutomaticModeSettings{
+				MinCloneLength:  *minClone,
+				ConvertToDRL:    *convertToDRL,
+				ArchetypeLength: *archetype,
+				StrictFilter:    *strict,
+				FilePath:        *input,
+			}
+			groups, err := ProcessAutomaticMode(content, settings)
+			if err != nil {
+				fmt.Println("Analysis error:", err)
+				os.Exit(1)
+			}
+			resultData := FormatAnalysisResults("automatic", groups, settings)
+			resultFile := filepath.Join("./results", generateResultsFileName(*input, "automatic"))
+			if err := writeToFile(resultFile, resultData); err != nil {
+				fmt.Println("Failed to write result:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Analysis complete. Results saved to:", resultFile)
+			return
+		}
+	}
+
 	// Start HTTP server in a goroutine
 	go func() {
 		mux := http.NewServeMux()

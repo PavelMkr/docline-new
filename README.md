@@ -26,3 +26,19 @@
 ```
 go run .
 ```
+
+### Linux:
+**With GUI**: ```go run .```
+
+**With CLI**: ```go run . -cli-... -input /path/to/file```
+
+#### CLI params:
+
+##### Modes:
+- **cli-auto**: Run in automatic mode (CLI)
+##### Other:
+- **input**: Input file path
+- **minClone**: Minimal clone length (tokens)
+- **archetype**: Minimal archetype length (tokens) [auto mode]
+- **strict**: Strict filtering [auto mode]
+- **drl**: Convert to DRL [auto mode]
