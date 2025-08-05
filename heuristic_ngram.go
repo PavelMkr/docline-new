@@ -1,6 +1,11 @@
 // FIXME find every 2 words in text
 package main
 
+// HeuristicNgram
+type HeuristicNgramFinderData struct {
+	ExtensionPointCheckbox bool   `json:"extension_point_checkbox"`
+	FilePath               string `json:"file_path"`
+}
 
 // applies heuristic rules to n-grams.
 func ApplyHeuristicRules(ngrams []string) []string {

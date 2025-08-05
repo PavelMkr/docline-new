@@ -2,6 +2,15 @@ package main
 
 import "fmt"
 
+// NgramDuplicate
+type NgramDuplicateFinderData struct {
+	MinCloneSlider int    `json:"min_clone_slider"`
+	MaxEditSlider  int    `json:"max_edit_slider"`
+	MaxFuzzySlider int    `json:"max_fuzzy_slider"`
+	SourceLanguage string `json:"source_language"`
+	FilePath       string `json:"file_path"`
+}
+
 func CalculateNGramSimilarity(map1, map2 map[string]int) float64 {
     intersection := 0
     union := 0

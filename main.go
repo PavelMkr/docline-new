@@ -11,20 +11,9 @@ import (
 	"strings"
 )
 
-// HeuristicNgram
-type HeuristicNgramFinderData struct {
-	ExtensionPointCheckbox bool   `json:"extension_point_checkbox"`
-	FilePath               string `json:"file_path"`
-}
 
-// NgramDuplicate
-type NgramDuplicateFinderData struct {
-	MinCloneSlider int    `json:"min_clone_slider"`
-	MaxEditSlider  int    `json:"max_edit_slider"`
-	MaxFuzzySlider int    `json:"max_fuzzy_slider"`
-	SourceLanguage string `json:"source_language"`
-	FilePath       string `json:"file_path"`
-}
+
+
 
 // FileUploadResponse represents the response on file upload
 type FileUploadResponse struct {
@@ -768,6 +757,7 @@ func main() {
 	// CLI flags
 	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
 	cliInter := flag.Bool("cli-interactive", false, "Run in interactive mode (CLI)")
+	cliNGram := flag.Bool("cli-heuristic",false,"Run in heuristic ngram mode (CLI)")
 
 	input := flag.String("input", "", "Input file path")
 	minClone := flag.Int("minClone", 20, "Minimal clone length (tokens)")
@@ -779,7 +769,7 @@ func main() {
 	convertToDRL := flag.Bool("drl", true, "Convert to DRL [auto mode]")
 	flag.Parse()
 
-	if *cliAuto || *cliInter {
+	if *cliAuto || *cliInter || *cliNGram {
 		if *input == "" {
 			fmt.Println("Error: --input is required")
 			os.Exit(1)
