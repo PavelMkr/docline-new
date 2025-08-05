@@ -785,6 +785,7 @@ func main() {
 	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
 	cliInter := flag.Bool("cli-interactive", false, "Run in interactive mode (CLI)")
 	cliNGram := flag.Bool("cli-ngram",false,"Run in ngram duplicate mode (CLI)")
+	cliHeur := flag.Bool("cli-heuristic",false,"Run in heuristic ngram mode (CLI)")
 
 	input := flag.String("input", "", "Input file path")
 	minClone := flag.Int("minClone", 20, "Minimal clone length (tokens)")
@@ -797,9 +798,10 @@ func main() {
 	archetype := flag.Int("archetype", 5, "Minimal archetype length (tokens) [auto mode]")
 	strict := flag.Bool("strict", true, "Strict filtering [auto mode]")
 	convertToDRL := flag.Bool("drl", true, "Convert to DRL [auto mode]")
+	extention := flag.Bool("extension",true,"Extension point values")
 	flag.Parse()
 
-	if *cliAuto || *cliInter || *cliNGram {
+	if *cliAuto || *cliInter || *cliNGram || *cliHeur {
 		if *input == "" {
 			fmt.Println("Error: --input is required")
 			os.Exit(1)
@@ -874,6 +876,33 @@ func main() {
 			groups := convertNGramResultsToGroups(duplicates)
 			resultData := FormatAnalysisResults("ngram", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "ngram"))
+			if err := writeToFile(resultFile, resultData); err != nil {
+				fmt.Println("Failed to write result:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Analysis complete. Results saved to:", resultFile)
+			return
+		}
+		if *cliHeur {
+			settings := HeuristicNgramFinderData{
+				ExtensionPointCheckbox:  *extention,
+				FilePath:                *input,
+			}
+			ngrams := HeuristicNgramAnalysis(settings, content, 2)
+			var groups []CloneGroup
+			for _, ngram := range ngrams {
+				group := CloneGroup{
+					Fragments: []TextFragment{{
+						Content:  ngram,
+						StartPos: 0, // TODO: Calculate actual positions
+						EndPos:   1,
+					}},
+					Power: 1,
+				}
+				groups = append(groups, group)
+			}
+			resultData := FormatAnalysisResults("heuristic", groups, settings)
+			resultFile := filepath.Join("./results", generateResultsFileName(*input, "heuristic"))
 			if err := writeToFile(resultFile, resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
