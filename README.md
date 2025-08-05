@@ -23,22 +23,35 @@
 - **Pandoc** - for converting documents to DocBook format
 
 ## Usage
-```
-go run .
-```
 
 ### Linux:
 **With GUI**: ```go run .```
 
-**With CLI**: ```go run . -cli-... -input /path/to/file```
+**With CLI**: ```go run . -cli-... ...```
 
 #### CLI params:
 
-##### Modes:
-- **cli-auto**: Run in automatic mode (CLI)
-##### Other:
-- **input**: Input file path
-- **minClone**: Minimal clone length (tokens)
-- **archetype**: Minimal archetype length (tokens) [auto mode]
-- **strict**: Strict filtering [auto mode]
-- **drl**: Convert to DRL [auto mode]
+- `cli-auto`: Run in automatic mode (CLI) +
+    - `minClone`: Minimal clone length (tokens);
+    - `drl`: Convert to DRL;
+    - `archetype`: Minimal archetype length (tokens);
+    - `strict`: Strict filtering;
+    - `input`: Input file path;
+
+- `cli-interactive`: Run in interactive mode (CLI) *
+    - `minClone`: Minimal clone length (tokens);
+    - `maxClone`: Maximal clone length (tokens);
+    - `minGroup`: Minimal Group Power (number of clones);
+    - `use-archetype`: Archetype calculation;
+    - `input`: Input file path;
+
+- `cli-ngram`: Run in ngram duplicate mode
+    - `minClone`: Minimal clone length (tokens);
+    - `maxDist`: Maximal edit distance (Levenshtein);
+    - `maxEdit`: Maximal fuzzy hash distance;
+    - `sourceLang`: Source document language;
+    - `input`: Input file path;
+
+- `cli-heuristic`: 
+    - `extention`: Extension point values;
+    - `input`: Input file path;
