@@ -767,14 +767,19 @@ func RegisterRoutes(mux *http.ServeMux) {
 func main() {
 	// CLI flags
 	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
+	cliInter := flag.Bool("cli-interactive", false, "Run in interactive mode (CLI)")
+
 	input := flag.String("input", "", "Input file path")
-	minClone := flag.Int("minClone", 10, "Minimal clone length (tokens)")
+	minClone := flag.Int("minClone", 20, "Minimal clone length (tokens)")
+	maxClone := flag.Int("maxClone", 50, "Maximal clone length (tokens)")
+	minGroup := flag.Int("minGroup",2,"Minimal Group Power (number of clones)")
+	useArch := flag.Bool("use-archetype",false,"Archetype calculation")
 	archetype := flag.Int("archetype", 5, "Minimal archetype length (tokens) [auto mode]")
-	strict := flag.Bool("strict", false, "Strict filtering [auto mode]")
-	convertToDRL := flag.Bool("drl", false, "Convert to DRL [auto mode]")
+	strict := flag.Bool("strict", true, "Strict filtering [auto mode]")
+	convertToDRL := flag.Bool("drl", true, "Convert to DRL [auto mode]")
 	flag.Parse()
 
-	if *cliAuto {
+	if *cliAuto || *cliInter {
 		if *input == "" {
 			fmt.Println("Error: --input is required")
 			os.Exit(1)
@@ -807,6 +812,28 @@ func main() {
 			}
 			resultData := FormatAnalysisResults("automatic", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "automatic"))
+			if err := writeToFile(resultFile, resultData); err != nil {
+				fmt.Println("Failed to write result:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Analysis complete. Results saved to:", resultFile)
+			return
+		}
+		if *cliInter {
+			settings := InteractiveModeSettings{
+				MinCloneLength:  *minClone,
+				MaxCloneLength:  *maxClone,
+				MinGroupPower:   *minGroup,
+				UseArchetype:    *useArch,
+				FilePath:        *input,
+			}
+			groups, err := ProcessInteractiveMode(content, settings)
+			if err != nil {
+				fmt.Println("Analysis error:", err)
+				os.Exit(1)
+			}
+			resultData := FormatAnalysisResults("interactive", groups, settings)
+			resultFile := filepath.Join("./results", generateResultsFileName(*input, "interactive"))
 			if err := writeToFile(resultFile, resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
