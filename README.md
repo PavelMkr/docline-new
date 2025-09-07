@@ -3,7 +3,7 @@
 **Documentation Refactoring Toolkit** -- a clone finder and documentation refactoring tool within the DocLine project.
 
 ### Modes
-- **Automatic mode** 
+- **Automatic mode**
 - **Interactive mode**
 - **Ngram Duplicate Finder**
 - **Heuristic Ngram Finder**
@@ -52,6 +52,16 @@
     - `sourceLang`: Source document language;
     - `input`: Input file path;
 
-- `cli-heuristic`: 
+- `cli-heuristic`:
     - `extention`: Extension point values;
     - `input`: Input file path;
+
+## Problems
+
+### Windows:
+
+- fatal error: ./webui/src/civetweb/civetweb.c: No such file or directory 14 | #include "./webui/src/civetweb/civetweb.c" | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compilation terminated
+```
+curl.exe -sSL https://raw.githubusercontent.com/webui-dev/go-webui/main/setup.bat -o setup.bat
+setup.bat
+```
