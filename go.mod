@@ -1,4 +1,4 @@
-module docline_ui_proto
+module Docline
 
 go 1.23.3
 
