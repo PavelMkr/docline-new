@@ -92,6 +92,24 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 		})
 	}
 
+	// Merge groups with similar archetypes using isSimilar
+	var merged []CloneGroup
+	for _, g := range groups {
+		mergedIntoExisting := false
+		for mi := range merged {
+			if isSimilar(g.Archetype, merged[mi].Archetype) {
+				merged[mi].Fragments = append(merged[mi].Fragments, g.Fragments...)
+				merged[mi].Power = len(merged[mi].Fragments)
+				mergedIntoExisting = true
+				break
+			}
+		}
+		if !mergedIntoExisting {
+			merged = append(merged, g)
+		}
+	}
+	groups = merged
+
 	// Apply strict filtering if enabled
 	if settings.StrictFilter {
 		groups = filterCloneGroups(groups, settings)

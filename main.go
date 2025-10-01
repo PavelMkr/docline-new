@@ -36,34 +36,59 @@ type AnalysisResult struct {
 }
 
 type CloneGroup struct {
-    Fragments []TextFragment
-    Power     int
-    Archetype string
+	Fragments []TextFragment
+	Power     int
+	Archetype string
 }
 
 type TextFragment struct {
-    Content  string
-    StartPos int
-    EndPos   int
+	Content  string
+	StartPos int
+	EndPos   int
 }
 
 func convertNGramResultsToGroups(ngramResults map[string][]string) []CloneGroup {
-    var groups []CloneGroup
-    for _, fragments := range ngramResults {
-        group := CloneGroup{
-            Fragments: make([]TextFragment, len(fragments)),
-            Power:     len(fragments),
-        }
-        for i, frag := range fragments {
-            group.Fragments[i] = TextFragment{
-                Content:  frag,
-                StartPos: 0, // You'll need to calculate these
-                EndPos:   len(frag),
-            }
-        }
-        groups = append(groups, group)
-    }
-    return groups
+	var groups []CloneGroup
+	for _, fragments := range ngramResults {
+		group := CloneGroup{
+			Fragments: make([]TextFragment, len(fragments)),
+			Power:     len(fragments),
+		}
+		for i, frag := range fragments {
+			fragTokens := strings.Fields(frag)
+			start := findFirstTokenWindowIndex(fragTokens, fragTokens)
+			end := start + len(fragTokens)
+			group.Fragments[i] = TextFragment{
+				Content:  frag,
+				StartPos: start,
+				EndPos:   end,
+			}
+		}
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+// findFirstTokenWindowIndex returns the starting index of the first occurrence
+// of needleTokens within hayTokens, or -1 if not found.
+func findFirstTokenWindowIndex(hayTokens, needleTokens []string) int {
+	if len(needleTokens) == 0 || len(hayTokens) < len(needleTokens) {
+		return -1
+	}
+	lastStart := len(hayTokens) - len(needleTokens)
+	for i := 0; i <= lastStart; i++ {
+		match := true
+		for j := 0; j < len(needleTokens); j++ {
+			if hayTokens[i+j] != needleTokens[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i
+		}
+	}
+	return -1
 }
 
 // FormatAnalysisResults formats the analysis results for output
@@ -258,11 +283,12 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert ngrams to clone groups format
 	var groups []CloneGroup
 	for _, ngram := range ngrams {
+		tokens := strings.Fields(ngram)
 		group := CloneGroup{
 			Fragments: []TextFragment{{
 				Content:  ngram,
-				StartPos: 0, // TODO: Calculate actual positions
-				EndPos:   1,
+				StartPos: 0,
+				EndPos:   len(tokens),
 			}},
 			Power: 1,
 		}
@@ -390,10 +416,16 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 			Power:     len(fragments),
 		}
 		for i, frag := range fragments {
+			tokens := strings.Fields(frag)
+			// Approximate the starting token index as 0 and compute length in tokens
+			// If the caller passes the full token stream later, replace this with findFirstTokenWindowIndex
+			// 
+			start := 0
+			end := start + len(tokens)
 			group.Fragments[i] = TextFragment{
 				Content:  frag,
-				StartPos: i, // TODO: Calculate actual positions
-				EndPos:   i + 1,
+				StartPos: start,
+				EndPos:   end,
 			}
 		}
 		groups = append(groups, group)
@@ -784,21 +816,21 @@ func main() {
 	// CLI flags
 	cliAuto := flag.Bool("cli-auto", false, "Run in automatic mode (CLI)")
 	cliInter := flag.Bool("cli-interactive", false, "Run in interactive mode (CLI)")
-	cliNGram := flag.Bool("cli-ngram",false,"Run in ngram duplicate mode (CLI)")
-	cliHeur := flag.Bool("cli-heuristic",false,"Run in heuristic ngram mode (CLI)")
+	cliNGram := flag.Bool("cli-ngram", false, "Run in ngram duplicate mode (CLI)")
+	cliHeur := flag.Bool("cli-heuristic", false, "Run in heuristic ngram mode (CLI)")
 
 	input := flag.String("input", "", "Input file path")
 	minClone := flag.Int("minClone", 20, "Minimal clone length (tokens)")
 	maxClone := flag.Int("maxClone", 50, "Maximal clone length (tokens)")
-	maxEdit := flag.Int("maxEdit", 9,"Maximal edit distance (Levenshtein)")
-	maxDist := flag.Int("maxDist",2,"Maximal fuzzy hash distance")
-	minGroup := flag.Int("minGroup",2,"Minimal Group Power (number of clones)")
-	sourceLang := flag.String("source-language","english","Source document language")
-	useArch := flag.Bool("use-archetype",false,"Archetype calculation")
+	maxEdit := flag.Int("maxEdit", 9, "Maximal edit distance (Levenshtein)")
+	maxDist := flag.Int("maxDist", 2, "Maximal fuzzy hash distance")
+	minGroup := flag.Int("minGroup", 2, "Minimal Group Power (number of clones)")
+	sourceLang := flag.String("source-language", "english", "Source document language")
+	useArch := flag.Bool("use-archetype", false, "Archetype calculation")
 	archetype := flag.Int("archetype", 5, "Minimal archetype length (tokens) [auto mode]")
 	strict := flag.Bool("strict", true, "Strict filtering [auto mode]")
 	convertToDRL := flag.Bool("drl", true, "Convert to DRL [auto mode]")
-	extention := flag.Bool("extension",true,"Extension point values")
+	extention := flag.Bool("extension", true, "Extension point values")
 	flag.Parse()
 
 	if *cliAuto || *cliInter || *cliNGram || *cliHeur {
@@ -843,11 +875,11 @@ func main() {
 		}
 		if *cliInter {
 			settings := InteractiveModeSettings{
-				MinCloneLength:  *minClone,
-				MaxCloneLength:  *maxClone,
-				MinGroupPower:   *minGroup,
-				UseArchetype:    *useArch,
-				FilePath:        *input,
+				MinCloneLength: *minClone,
+				MaxCloneLength: *maxClone,
+				MinGroupPower:  *minGroup,
+				UseArchetype:   *useArch,
+				FilePath:       *input,
 			}
 			groups, err := ProcessInteractiveMode(content, settings)
 			if err != nil {
@@ -865,11 +897,11 @@ func main() {
 		}
 		if *cliNGram {
 			settings := NgramDuplicateFinderData{
-				MinCloneSlider:  *minClone,
-				MaxEditSlider:   *maxDist,
-				MaxFuzzySlider:  *maxEdit,
-				SourceLanguage:  *sourceLang,
-				FilePath:        *input,
+				MinCloneSlider: *minClone,
+				MaxEditSlider:  *maxDist,
+				MaxFuzzySlider: *maxEdit,
+				SourceLanguage: *sourceLang,
+				FilePath:       *input,
 			}
 			parts := splitTextIntoParts(content)
 			duplicates := FindDuplicatesByNGram(settings, parts)
@@ -885,8 +917,8 @@ func main() {
 		}
 		if *cliHeur {
 			settings := HeuristicNgramFinderData{
-				ExtensionPointCheckbox:  *extention,
-				FilePath:                *input,
+				ExtensionPointCheckbox: *extention,
+				FilePath:               *input,
 			}
 			ngrams := HeuristicNgramAnalysis(settings, content, 2)
 			var groups []CloneGroup
