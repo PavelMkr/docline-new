@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -22,14 +23,19 @@ type AutomaticModeResponse struct {
 	ResultsFile string              `json:"results_file,omitempty"`
 }
 
-
-
 // convertToDRL converts text to DRL format
 func convertToDRL(text string) string {
-	// TODO: Implement actual DRL conversion
-	// For now, just return the text with some basic preprocessing
-	text = strings.TrimSpace(text)
+	// Basic deterministic representation of DRL
 	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ToLower(text)
+	// Replace any non letter/digit whitespace combo with space
+	// Keep unicode letters and digits roughly by removing common punctuation.
+	// Go's regex character classes are ASCII-focused; simplify to strip punctuation symbols.
+	punctuation := regexp.MustCompile(`[\p{P}\p{S}]+`)
+	text = punctuation.ReplaceAllString(text, " ")
+	spaceCollapse := regexp.MustCompile(`\s+`)
+	text = spaceCollapse.ReplaceAllString(text, " ")
+	text = strings.TrimSpace(text)
 	return text
 }
 
@@ -41,39 +47,49 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 		return nil
 	}
 
-	var groups []CloneGroup
-	// Create a sliding window of tokens
-	for i := 0; i <= len(tokens)-settings.MinCloneLength; i++ {
-		window := tokens[i : i+settings.MinCloneLength]
-		windowText := strings.Join(window, " ")
+	windowSize := settings.MinCloneLength
+	total := len(tokens) - windowSize + 1
+	if total <= 0 {
+		return nil
+	}
 
-		// Check if this window is similar to any existing group
-		found := false
-		for j := range groups {
-			if isSimilar(windowText, groups[j].Archetype) {
-				groups[j].Fragments = append(groups[j].Fragments, TextFragment{
-					Content:  windowText,
-					StartPos: i,
-					EndPos:   i + settings.MinCloneLength,
-				})
-				groups[j].Power++
-				found = true
-				break
-			}
+	// Two-pass exact-window grouping for performance
+	// Pass 1: frequency count
+	freq := make(map[string]int, total)
+	for i := 0; i <= len(tokens)-windowSize; i++ {
+		w := strings.Join(tokens[i:i+windowSize], " ")
+		freq[w]++
+	}
+
+	// Pass 2: collect positions for windows with freq >= 2
+	candidates := make(map[string][]TextFragment)
+	for k, c := range freq {
+		if c >= 2 {
+			candidates[k] = nil
 		}
-
-		// If no similar group found, create a new one
-		if !found {
-			groups = append(groups, CloneGroup{
-				Fragments: []TextFragment{{
-					Content:  windowText,
-					StartPos: i,
-					EndPos:   i + settings.MinCloneLength,
-				}},
-				Archetype: windowText,
-				Power:     1,
+	}
+	for i := 0; i <= len(tokens)-windowSize; i++ {
+		w := strings.Join(tokens[i:i+windowSize], " ")
+		if _, ok := candidates[w]; ok {
+			candidates[w] = append(candidates[w], TextFragment{
+				Content:  w,
+				StartPos: i,
+				EndPos:   i + windowSize,
 			})
 		}
+	}
+
+	// Build groups
+	var groups []CloneGroup
+	for archetype, frags := range candidates {
+		if len(frags) < 2 {
+			continue
+		}
+		groups = append(groups, CloneGroup{
+			Fragments: frags,
+			Power:     len(frags),
+			Archetype: archetype,
+		})
 	}
 
 	// Apply strict filtering if enabled
@@ -86,9 +102,42 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 
 // isSimilar checks if two text fragments are similar enough
 func isSimilar(a, b string) bool {
-	// TODO: Implement actual similarity check
-	// For now, use simple string comparison
-	return a == b
+	// Token-level Jaccard similarity of unigrams
+	aTokens := strings.Fields(a)
+	bTokens := strings.Fields(b)
+	if len(aTokens) == 0 && len(bTokens) == 0 {
+		return true
+	}
+	aSet := make(map[string]struct{})
+	for _, t := range aTokens {
+		aSet[t] = struct{}{}
+	}
+	bSet := make(map[string]struct{})
+	for _, t := range bTokens {
+		bSet[t] = struct{}{}
+	}
+	intersection := 0
+	union := 0
+	seen := make(map[string]struct{})
+	for t := range aSet {
+		if _, ok := bSet[t]; ok {
+			intersection++
+		}
+		seen[t] = struct{}{}
+		union++
+	}
+	for t := range bSet {
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		union++
+	}
+	if union == 0 {
+		return false
+	}
+	jaccard := float64(intersection) / float64(union)
+	// Conservative threshold since windows are exact-length token slices
+	return jaccard >= 0.9
 }
 
 // filterCloneGroups applies strict filtering to clone groups

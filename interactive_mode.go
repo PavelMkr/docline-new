@@ -38,68 +38,84 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 		return nil
 	}
 
-	// Use a map to store potential clones by their content
-	potentialClones := make(map[string][]TextFragment)
-	maxLength := settings.MaxCloneLength
-	if maxLength <= 0 {
-		maxLength = tokenCount
+	// Fix to avoid memory explosion: 1) Count frequencies; 2) Collect positions for frequent windows only.
+	length := settings.MinCloneLength
+	if length <= 0 {
+		length = 1
+	}
+	windowCount := tokenCount - length + 1
+	if windowCount <= 0 {
+		return nil
 	}
 
-	// Process each possible window size
-	for length := settings.MinCloneLength; length <= maxLength; length++ {
-		fmt.Printf("Processing windows of size %d...\n", length)
-		windowCount := tokenCount - length + 1
-		processedWindows := 0
+	fmt.Printf("Processing windows of size %d (two-pass) ...\n", length)
 
-		// Create sliding windows of current size
-		for i := 0; i <= tokenCount-length; i++ {
-			window := tokens[i : i+length]
-			windowText := strings.Join(window, " ")
+	// frequency count
+	freq := make(map[string]int, windowCount)
+	for i := 0; i <= tokenCount-length; i++ {
+		window := tokens[i : i+length]
+		windowText := strings.Join(window, " ")
+		freq[windowText]++
+		if i%5000 == 0 && i > 0 {
+			fmt.Printf("Counted %d/%d windows...\n", i, windowCount)
+		}
+	}
 
-			// Add to potential clones
+	// Prepare container only for candidates meeting min power
+	potentialClones := make(map[string][]TextFragment)
+	candidates := 0
+	for k, c := range freq {
+		if c >= settings.MinGroupPower {
+			potentialClones[k] = nil // mark as candidate
+			candidates++
+		}
+	}
+	fmt.Printf("Candidates meeting MinGroupPower=%d: %d (of %d uniques)\n", settings.MinGroupPower, candidates, len(freq))
+
+	// collect positions only for candidates
+	processed := 0
+	for i := 0; i <= tokenCount-length; i++ {
+		window := tokens[i : i+length]
+		windowText := strings.Join(window, " ")
+		if _, ok := potentialClones[windowText]; ok {
 			potentialClones[windowText] = append(potentialClones[windowText], TextFragment{
 				Content:  windowText,
 				StartPos: i,
 				EndPos:   i + length,
 			})
-
-			processedWindows++
-			if processedWindows%1000 == 0 {
-				fmt.Printf("Processed %d/%d windows of size %d\n", processedWindows, windowCount, length)
-			}
+		}
+		processed++
+		if processed%5000 == 0 {
+			fmt.Printf("Collected %d/%d windows...\n", processed, windowCount)
 		}
 	}
 
-	fmt.Printf("Found %d unique text fragments\n", len(potentialClones))
+	fmt.Printf("Collected positions for %d candidate fragments\n", len(potentialClones))
 
-	// Convert potential clones to groups
+	// Merge potential clones into groups using fuzzy similarity
 	var groups []CloneGroup
 	for text, fragments := range potentialClones {
-		if len(fragments) >= settings.MinGroupPower {
-			// Remove overlapping fragments
-			var nonOverlapping []TextFragment
-			for i, frag := range fragments {
-				overlaps := false
-				for j := 0; j < i; j++ {
-					if hasOverlap(frag, fragments[j]) {
-						overlaps = true
-						break
-					}
-				}
-				if !overlaps {
-					nonOverlapping = append(nonOverlapping, frag)
-				}
-			}
-
-			if len(nonOverlapping) >= settings.MinGroupPower {
-				groups = append(groups, CloneGroup{
-					Fragments: nonOverlapping,
-					Archetype: text,
-					Power:     len(nonOverlapping),
-				})
+		// Try to find an existing group with similar archetype
+		placed := false
+		for gi := range groups {
+			if isSimilarInteractive(text, groups[gi].Archetype) {
+				groups[gi].Fragments = append(groups[gi].Fragments, fragments...)
+				groups[gi].Power = len(groups[gi].Fragments)
+				placed = true
+				break
 			}
 		}
+		if !placed {
+			groups = append(groups, CloneGroup{
+				Fragments: append([]TextFragment(nil), fragments...),
+				Archetype: text,
+				Power:     len(fragments),
+			})
+		}
 	}
+
+	// Apply standard interactive filtering
+	groups = filterInteractiveGroups(groups, settings)
 
 	fmt.Printf("Found %d clone groups after filtering\n", len(groups))
 
@@ -114,9 +130,42 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 
 // isSimilarInteractive checks if two text fragments are similar enough for interactive mode
 func isSimilarInteractive(a, b string) bool {
-	// For now, use exact string comparison
-	// TODO: Implement fuzzy matching for interactive mode
-	return a == b
+	// Use token-level Jaccard similarity with a slightly lower threshold for
+	// interactive exploration
+	aTokens := strings.Fields(a)
+	bTokens := strings.Fields(b)
+	if len(aTokens) == 0 && len(bTokens) == 0 {
+		return true
+	}
+	aSet := make(map[string]struct{})
+	for _, t := range aTokens {
+		aSet[t] = struct{}{}
+	}
+	bSet := make(map[string]struct{})
+	for _, t := range bTokens {
+		bSet[t] = struct{}{}
+	}
+	intersection := 0
+	union := 0
+	seen := make(map[string]struct{})
+	for t := range aSet {
+		if _, ok := bSet[t]; ok {
+			intersection++
+		}
+		seen[t] = struct{}{}
+		union++
+	}
+	for t := range bSet {
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		union++
+	}
+	if union == 0 {
+		return false
+	}
+	jaccard := float64(intersection) / float64(union)
+	return jaccard >= 0.8
 }
 
 // filterInteractiveGroups filters clone groups based on interactive mode settings
@@ -172,15 +221,59 @@ func calculateArchetypes(groups *[]CloneGroup) {
 			continue
 		}
 
-		// For now, use the longest fragment as archetype
-		// TODO: Implement more sophisticated archetype calculation
-		longestFrag := group.Fragments[0]
-		for _, frag := range group.Fragments {
-			if len(frag.Content) > len(longestFrag.Content) {
-				longestFrag = frag
+		// Choose fragment with highest average Jaccard similarity to others
+		bestIdx := 0
+		bestScore := -1.0
+		for idx, candidate := range group.Fragments {
+			total := 0.0
+			count := 0.0
+			for j, other := range group.Fragments {
+				if j == idx {
+					continue
+				}
+				// Reuse interactive similarity as a proxy score
+				// But compute raw Jaccard score to average
+				aTokens := strings.Fields(candidate.Content)
+				bTokens := strings.Fields(other.Content)
+				aSet := make(map[string]struct{})
+				for _, t := range aTokens {
+					aSet[t] = struct{}{}
+				}
+				bSet := make(map[string]struct{})
+				for _, t := range bTokens {
+					bSet[t] = struct{}{}
+				}
+				inter := 0
+				uni := 0
+				seen := make(map[string]struct{})
+				for t := range aSet {
+					if _, ok := bSet[t]; ok {
+						inter++
+					}
+					seen[t] = struct{}{}
+					uni++
+				}
+				for t := range bSet {
+					if _, ok := seen[t]; ok {
+						continue
+					}
+					uni++
+				}
+				if uni > 0 {
+					total += float64(inter) / float64(uni)
+					count++
+				}
+			}
+			score := 0.0
+			if count > 0 {
+				score = total / count
+			}
+			if score > bestScore {
+				bestScore = score
+				bestIdx = idx
 			}
 		}
-		group.Archetype = longestFrag.Content
+		group.Archetype = group.Fragments[bestIdx].Content
 	}
 }
 
