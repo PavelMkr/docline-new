@@ -91,6 +91,77 @@ func writeTextAsHTML(filePath, title, text string) error {
 	return writeSimpleHTML(filePath, title, body)
 }
 
+// tokenPreview returns first N tokens of text joined by space
+func tokenPreview(text string, n int) string {
+	ts := strings.Fields(text)
+	if n <= 0 || len(ts) == 0 {
+		return ""
+	}
+	if len(ts) > n {
+		ts = ts[:n]
+	}
+	return strings.Join(ts, " ")
+}
+
+// WriteResultsHTML writes a structured, readable HTML report for clone groups
+func WriteResultsHTML(filePath, title string, groups []CloneGroup, settingsHTML string, sourceFile string) error {
+	// compute summary
+	totalGroups := len(groups)
+	totalFragments := 0
+	for _, g := range groups {
+		totalFragments += len(g.Fragments)
+	}
+	avgTokens := AverageTokensInGroup(groups)
+
+	var sb strings.Builder
+	sb.WriteString("<style>\n")
+	sb.WriteString(".meta{color:#555;margin-bottom:12px;font-family:sans-serif}\n")
+	sb.WriteString("table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px;font-family:sans-serif;font-size:14px}\n")
+	sb.WriteString(".arch{color:#333;font-weight:600}\n")
+	sb.WriteString(".frag{font-family:monospace;white-space:pre-wrap}\n")
+	sb.WriteString(".loc{color:#666;font-size:12px;margin:4px 0 8px}\n")
+	sb.WriteString(".toggle{cursor:pointer;color:#06c;text-decoration:underline}\n")
+	sb.WriteString("</style>\n")
+	sb.WriteString("<div class=\"meta\">")
+	if settingsHTML != "" {
+		sb.WriteString(settingsHTML)
+	}
+	sb.WriteString(fmt.Sprintf("<div><b>Total groups:</b> %d; <b>Total fragments:</b> %d; <b>Avg tokens:</b> %.3f</div>", totalGroups, totalFragments, avgTokens))
+	sb.WriteString("</div>")
+
+	// groups table
+	sb.WriteString("<table><thead><tr><th>#</th><th>Power</th><th>Archetype</th><th>Fragments</th></tr></thead><tbody>")
+	for i, g := range groups {
+		arch := htmlEscape(g.Archetype)
+		// fragments list collapsible
+		fragID := fmt.Sprintf("gfr_%d", i+1)
+		sb.WriteString("<tr>")
+		sb.WriteString(fmt.Sprintf("<td>%d</td>", i+1))
+		sb.WriteString(fmt.Sprintf("<td>%d</td>", len(g.Fragments)))
+		sb.WriteString(fmt.Sprintf("<td class=\"arch\">%s</td>", arch))
+		// header with toggle
+		sb.WriteString(fmt.Sprintf("<td><span class=\"toggle\" onclick=\"var e=document.getElementById('%s');e.style.display=e.style.display==='none'?'block':'none'\">toggle</span>", fragID))
+		// fragments container
+		sb.WriteString(fmt.Sprintf("<div id=\"%s\" style=\"display:none;margin-top:6px\">", fragID))
+		sb.WriteString("<ol>")
+		for _, f := range g.Fragments {
+			sb.WriteString("<li class=\"frag\">")
+			sb.WriteString(htmlEscape(f.Content))
+			sb.WriteString("</li>")
+			// location hint
+			firstTokens := tokenPreview(f.Content, 8)
+			hint := fmt.Sprintf("Locate: tokens [%d-%d). Tip: search first words in %s: "+
+				"<code>%s</code>", f.StartPos, f.EndPos, htmlEscape(sourceFile), htmlEscape(firstTokens))
+			sb.WriteString("<div class=\"loc\">" + hint + "</div>")
+		}
+		sb.WriteString("</ol></div></td>")
+		sb.WriteString("</tr>")
+	}
+	sb.WriteString("</tbody></table>")
+
+	return writeSimpleHTML(filePath, title, sb.String())
+}
+
 // WritePygroupsHTML renders a simple groups table similar to clones2html.py output
 func WritePygroupsHTML(targetPath string, groups []CloneGroup, filenames []string, avgTok float64, dirtyGrp int) error {
 	// files list

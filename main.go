@@ -50,6 +50,15 @@ type TextFragment struct {
 	EndPos   int
 }
 
+// setDefaultArchetypes ensures every group has Archetype; uses first fragment content if empty
+func setDefaultArchetypes(groups []CloneGroup) {
+	for gi := range groups {
+		if groups[gi].Archetype == "" && len(groups[gi].Fragments) > 0 {
+			groups[gi].Archetype = groups[gi].Fragments[0].Content
+		}
+	}
+}
+
 func convertNGramResultsToGroups(ngramResults map[string][]string) []CloneGroup {
 	var groups []CloneGroup
 	for _, fragments := range ngramResults {
@@ -66,6 +75,9 @@ func convertNGramResultsToGroups(ngramResults map[string][]string) []CloneGroup 
 				StartPos: start,
 				EndPos:   end,
 			}
+		}
+		if len(group.Fragments) > 0 {
+			group.Archetype = group.Fragments[0].Content
 		}
 		groups = append(groups, group)
 	}
@@ -302,15 +314,18 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 			}},
 			Power: 1,
 		}
+		group.Archetype = ngram
 		groups = append(groups, group)
 	}
+	setDefaultArchetypes(groups)
 
 	// Format and save results text
 	baseDir := getResultDir(filePath, "heuristic")
 	_ = os.MkdirAll(baseDir, 0755)
 	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "heuristic"))
-	resultData := FormatAnalysisResults("heuristic", groups, data)
-	if err := writeTextAsHTML(resultFilePath, "Heuristic Analysis Results", resultData); err != nil {
+	// structured HTML
+	heurSettings := fmt.Sprintf("<div><b>Extension Point Check:</b> %v</div>", data.ExtensionPointCheckbox)
+	if err := WriteResultsHTML(resultFilePath, "Heuristic Analysis Results", groups, heurSettings, filePath); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -437,6 +452,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Convert duplicates to clone groups format
 	groups := convertNGramResultsToGroups(duplicates)
+	setDefaultArchetypes(groups)
 	for _, fragments := range duplicates {
 		group := CloneGroup{
 			Fragments: make([]TextFragment, len(fragments)),
@@ -462,8 +478,8 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	baseDir := getResultDir(filePath, "ngram")
 	_ = os.MkdirAll(baseDir, 0755)
 	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "ngram"))
-	resultData := FormatAnalysisResults("ngram", groups, data)
-	if err := writeTextAsHTML(resultFilePath, "N-Gram Analysis Results", resultData); err != nil {
+	ngramSettings := fmt.Sprintf("<div><b>Min clone length:</b> %d; <b>Max edit:</b> %d; <b>Max fuzzy:</b> %d; <b>Language:</b> %s</div>", data.MinCloneSlider, data.MaxEditSlider, data.MaxFuzzySlider, data.SourceLanguage)
+	if err := WriteResultsHTML(resultFilePath, "N-Gram Analysis Results", groups, ngramSettings, filePath); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -472,7 +488,8 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	// <file>.reformatted.result.txt (HTML now), <file>.reformatted.groups.json and pyvarelements.html
 	base := filepath.Base(filePath)
 	reform := filepath.Join(baseDir, base+".reformatted.result.html")
-	_ = writeTextAsHTML(reform, "N-Gram Reformatted Result", resultData)
+	reformText := FormatAnalysisResults("ngram", groups, data)
+	_ = writeTextAsHTML(reform, "N-Gram Reformatted Result", reformText)
 	groupsJSON := filepath.Join(baseDir, base+".reformatted.groups.json")
 	_ = writeJSON(groupsJSON, groups)
 	_ = WritePyVariativeElements(filepath.Join(baseDir, "pyvarelements.html"), groups)
@@ -686,8 +703,8 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	baseDir := getResultDir(filePath, "automatic")
 	_ = os.MkdirAll(baseDir, 0755)
 	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "automatic"))
-	resultData := FormatAnalysisResults("automatic", groups, settings)
-	if err := writeTextAsHTML(resultFilePath, "Automatic Mode Analysis Results", resultData); err != nil {
+	autoSettings := fmt.Sprintf("<div><b>Min clone length:</b> %d; <b>Convert to DRL:</b> %v; <b>Min archetype len:</b> %d; <b>Strict filter:</b> %v</div>", settings.MinCloneLength, settings.ConvertToDRL, settings.ArchetypeLength, settings.StrictFilter)
+	if err := WriteResultsHTML(resultFilePath, "Automatic Mode Analysis Results", groups, autoSettings, filePath); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -821,6 +838,9 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Printf("Interactive mode processing completed, found %d groups\n", len(groups))
+	if !settings.UseArchetype {
+		setDefaultArchetypes(groups)
+	}
 
 	// Pre-generate heatmap HTML for server
 	tokens := strings.Fields(content)
@@ -841,11 +861,9 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	// Format and save results
 	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "interactive"))
 	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
-	resultData := FormatInteractiveModeResults(groups, settings)
-	fmt.Printf("Results formatted, data length: %d bytes\n", len(resultData))
-
+	interSettings := fmt.Sprintf("<div><b>Min clone:</b> %d; <b>Max clone:</b> %d; <b>Min group power:</b> %d; <b>Archetype:</b> %v</div>", settings.MinCloneLength, settings.MaxCloneLength, settings.MinGroupPower, settings.UseArchetype)
 	fmt.Printf("Attempting to write results to file...\n")
-	if err := writeTextAsHTML(resultFilePath, "Interactive Mode Analysis Results", resultData); err != nil {
+	if err := WriteResultsHTML(resultFilePath, "Interactive Mode Analysis Results", groups, interSettings, filePath); err != nil {
 		fmt.Printf("Error writing to file: %v\n", err)
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
@@ -1086,11 +1104,11 @@ func main() {
 				fmt.Println("Analysis error:", err)
 				os.Exit(1)
 			}
-			resultData := FormatAnalysisResults("automatic", groups, settings)
 			baseDir := getResultDir(*input, "automatic")
 			_ = os.MkdirAll(baseDir, 0755)
 			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "automatic"))
-			if err := writeTextAsHTML(resultFile, "Automatic Mode Analysis Results", resultData); err != nil {
+			autoSettings := fmt.Sprintf("<div><b>Min clone length:</b> %d; <b>Convert to DRL:</b> %v; <b>Min archetype len:</b> %d; <b>Strict filter:</b> %v</div>", settings.MinCloneLength, settings.ConvertToDRL, settings.ArchetypeLength, settings.StrictFilter)
+			if err := WriteResultsHTML(resultFile, "Automatic Mode Analysis Results", groups, autoSettings, *input); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1110,11 +1128,14 @@ func main() {
 				fmt.Println("Analysis error:", err)
 				os.Exit(1)
 			}
-			resultData := FormatAnalysisResults("interactive", groups, settings)
+			if !settings.UseArchetype {
+				setDefaultArchetypes(groups)
+			}
 			baseDir := getResultDir(*input, "interactive")
 			_ = os.MkdirAll(baseDir, 0755)
 			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "interactive"))
-			if err := writeTextAsHTML(resultFile, "Interactive Mode Analysis Results", resultData); err != nil {
+			interSettings := fmt.Sprintf("<div><b>Min clone:</b> %d; <b>Max clone:</b> %d; <b>Min group power:</b> %d; <b>Archetype:</b> %v</div>", settings.MinCloneLength, settings.MaxCloneLength, settings.MinGroupPower, settings.UseArchetype)
+			if err := WriteResultsHTML(resultFile, "Interactive Mode Analysis Results", groups, interSettings, *input); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1147,11 +1168,11 @@ func main() {
 			parts := splitTextIntoParts(content)
 			duplicates := FindDuplicatesByNGram(settings, parts)
 			groups := convertNGramResultsToGroups(duplicates)
-			resultData := FormatAnalysisResults("ngram", groups, settings)
 			baseDir := getResultDir(*input, "ngram")
 			_ = os.MkdirAll(baseDir, 0755)
 			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "ngram"))
-			if err := writeTextAsHTML(resultFile, "N-Gram Analysis Results", resultData); err != nil {
+			ngramSettings := fmt.Sprintf("<div><b>Min clone length:</b> %d; <b>Max edit:</b> %d; <b>Max fuzzy:</b> %d; <b>Language:</b> %s</div>", settings.MinCloneSlider, settings.MaxEditSlider, settings.MaxFuzzySlider, settings.SourceLanguage)
+			if err := WriteResultsHTML(resultFile, "N-Gram Analysis Results", groups, ngramSettings, *input); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1176,11 +1197,11 @@ func main() {
 				}
 				groups = append(groups, group)
 			}
-			resultData := FormatAnalysisResults("heuristic", groups, settings)
 			baseDir := getResultDir(*input, "heuristic")
 			_ = os.MkdirAll(baseDir, 0755)
 			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "heuristic"))
-			if err := writeTextAsHTML(resultFile, "Heuristic Analysis Results", resultData); err != nil {
+			heurSettings := fmt.Sprintf("<div><b>Extension Point Check:</b> %v</div>", settings.ExtensionPointCheckbox)
+			if err := WriteResultsHTML(resultFile, "Heuristic Analysis Results", groups, heurSettings, *input); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
