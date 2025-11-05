@@ -196,6 +196,13 @@ func generateResultsFileName(inputPath, mode string) string {
 	return fmt.Sprintf("%s_%s_results.html", nameWithoutExt, mode)
 }
 
+// getResultDir returns base results dir: ./results/<mode>/<filename-no-ext>
+func getResultDir(inputPath, mode string) string {
+	baseName := filepath.Base(inputPath)
+	nameWithoutExt := baseName[:len(baseName)-len(filepath.Ext(baseName))]
+	return filepath.Join("./results", mode, nameWithoutExt)
+}
+
 func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Get request:", r.Method, r.URL.Path)
 	if r.Method != http.MethodPost {
@@ -299,7 +306,9 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results text
-	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "heuristic"))
+	baseDir := getResultDir(filePath, "heuristic")
+	_ = os.MkdirAll(baseDir, 0755)
+	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "heuristic"))
 	resultData := FormatAnalysisResults("heuristic", groups, data)
 	if err := writeTextAsHTML(resultFilePath, "Heuristic Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
@@ -308,7 +317,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Additional outputs per Heuristic Ngram Finder
 	// heuristic_finder/out.json
-	heurDir := filepath.Join("./results", "heuristic_finder")
+	heurDir := filepath.Join(baseDir, "heuristic_finder")
 	if err := os.MkdirAll(heurDir, 0755); err == nil {
 		_ = writeJSON(filepath.Join(heurDir, "out.json"), map[string]any{
 			"ngrams": groups,
@@ -316,7 +325,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// <file>.neardups/pyvarelements.html
 	base := filepath.Base(filePath)
-	ndDir := filepath.Join("./results", base+".neardups")
+	ndDir := filepath.Join(baseDir, base+".neardups")
 	if err := os.MkdirAll(ndDir, 0755); err == nil {
 		_ = WritePyVariativeElements(filepath.Join(ndDir, "pyvarelements.html"), groups)
 	}
@@ -450,7 +459,9 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results
-	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "ngram"))
+	baseDir := getResultDir(filePath, "ngram")
+	_ = os.MkdirAll(baseDir, 0755)
+	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "ngram"))
 	resultData := FormatAnalysisResults("ngram", groups, data)
 	if err := writeTextAsHTML(resultFilePath, "N-Gram Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
@@ -458,13 +469,13 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Additional outputs per Ngram Duplicate Finder
-	// <file>.reformatted.result.txt and <file>.reformatted.groups.json and pyvarelements.html
+	// <file>.reformatted.result.txt (HTML now), <file>.reformatted.groups.json and pyvarelements.html
 	base := filepath.Base(filePath)
-	reform := filepath.Join("./results", base+".reformatted.result.txt")
-	_ = writeToFile(reform, resultData)
-	groupsJSON := filepath.Join("./results", base+".reformatted.groups.json")
+	reform := filepath.Join(baseDir, base+".reformatted.result.html")
+	_ = writeTextAsHTML(reform, "N-Gram Reformatted Result", resultData)
+	groupsJSON := filepath.Join(baseDir, base+".reformatted.groups.json")
 	_ = writeJSON(groupsJSON, groups)
-	_ = WritePyVariativeElements(filepath.Join("./results", "pyvarelements.html"), groups)
+	_ = WritePyVariativeElements(filepath.Join(baseDir, "pyvarelements.html"), groups)
 
 	// Convert groups to response format
 	responseGroups, _ := ConvertGroupsToResponse(groups, false)
@@ -672,7 +683,9 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format and save results text
-	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "automatic"))
+	baseDir := getResultDir(filePath, "automatic")
+	_ = os.MkdirAll(baseDir, 0755)
+	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "automatic"))
 	resultData := FormatAnalysisResults("automatic", groups, settings)
 	if err := writeTextAsHTML(resultFilePath, "Automatic Mode Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
@@ -684,9 +697,8 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%d, %5d, %.3f\n", settings.MinCloneLength, len(groups), AverageTokensInGroup(groups))
 
 	// Generate Automatic mode outputs
-	baseName := filepath.Base(filePath)
-	baseNoExt := baseName[:len(baseName)-len(filepath.Ext(baseName))]
-	outDir := filepath.Join("./results", "Output", baseNoExt)
+	// Output reports under automatic/<file>/Output
+	outDir := filepath.Join(baseDir, "Output")
 	if err := os.MkdirAll(outDir, 0755); err == nil {
 		_ = WritePygroupsHTML(filepath.Join(outDir, "pygroups.html"), groups, []string{filepath.Base(filePath)}, AverageTokensInGroup(groups), len(groups))
 		_ = WritePyVariativeElements(filepath.Join(outDir, "pyvarelements.html"), groups)
@@ -817,11 +829,17 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	heatmapHTML = preHTML
 	heatmapMu.Unlock()
 
-	// Save interactive heatmap to results directory
-	_ = writeSimpleHTML(filepath.Join("./results", "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+	// Prepare baseDir for interactive and save heatmap there
+	baseDir := getResultDir(filePath, "interactive")
+	_ = os.MkdirAll(baseDir, 0755)
+	_ = writeSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+	// Persist current interactive dir for /select endpoint
+	interactiveDirMu.Lock()
+	interactiveCurrentDir = baseDir
+	interactiveDirMu.Unlock()
 
 	// Format and save results
-	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "interactive"))
+	resultFilePath := filepath.Join(baseDir, generateResultsFileName(filePath, "interactive"))
 	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
 	resultData := FormatInteractiveModeResults(groups, settings)
 	fmt.Printf("Results formatted, data length: %d bytes\n", len(resultData))
@@ -872,6 +890,8 @@ var startInteractiveOnce sync.Once
 var openInteractiveOnce sync.Once
 var heatmapMu sync.RWMutex
 var heatmapHTML string
+var interactiveDirMu sync.RWMutex
+var interactiveCurrentDir string
 
 // buildHeatmapHTML builds a simple token-density heatmap based on groups
 func buildHeatmapHTML(totalTokens int, groups []CloneGroup) string {
@@ -958,7 +978,7 @@ func startInteractiveHeatmapServer() {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		// produce pyvarelements.html in ./results
+		// produce pyvarelements.html in results/interactive/<file>/
 		var groups []CloneGroup
 		if len(body.Fragments) > 0 {
 			g := CloneGroup{Power: len(body.Fragments)}
@@ -967,7 +987,14 @@ func startInteractiveHeatmapServer() {
 			}
 			groups = append(groups, g)
 		}
-		target := filepath.Join("./results", "pyvarelements.html")
+		interactiveDirMu.RLock()
+		outDir := interactiveCurrentDir
+		interactiveDirMu.RUnlock()
+		if outDir == "" {
+			outDir = filepath.Join("./results", "interactive", "current")
+		}
+		_ = os.MkdirAll(outDir, 0755)
+		target := filepath.Join(outDir, "pyvarelements.html")
 		if err := WritePyVariativeElements(target, groups); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -1060,7 +1087,9 @@ func main() {
 				os.Exit(1)
 			}
 			resultData := FormatAnalysisResults("automatic", groups, settings)
-			resultFile := filepath.Join("./results", generateResultsFileName(*input, "automatic"))
+			baseDir := getResultDir(*input, "automatic")
+			_ = os.MkdirAll(baseDir, 0755)
+			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "automatic"))
 			if err := writeTextAsHTML(resultFile, "Automatic Mode Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
@@ -1082,7 +1111,9 @@ func main() {
 				os.Exit(1)
 			}
 			resultData := FormatAnalysisResults("interactive", groups, settings)
-			resultFile := filepath.Join("./results", generateResultsFileName(*input, "interactive"))
+			baseDir := getResultDir(*input, "interactive")
+			_ = os.MkdirAll(baseDir, 0755)
+			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "interactive"))
 			if err := writeTextAsHTML(resultFile, "Interactive Mode Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
@@ -1094,8 +1125,11 @@ func main() {
 			heatmapMu.Lock()
 			heatmapHTML = preHTML
 			heatmapMu.Unlock()
-			// Save interactive heatmap to results directory
-			_ = writeSimpleHTML(filepath.Join("./results", "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+			// Save interactive heatmap to results/interactive/<file>
+			_ = writeSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+			interactiveDirMu.Lock()
+			interactiveCurrentDir = baseDir
+			interactiveDirMu.Unlock()
 			// Start interactive UI server and open browser, then block to keep it running
 			go startInteractiveHeatmapServer()
 			go openDefaultBrowser("http://127.0.0.1:49999/")
@@ -1114,7 +1148,9 @@ func main() {
 			duplicates := FindDuplicatesByNGram(settings, parts)
 			groups := convertNGramResultsToGroups(duplicates)
 			resultData := FormatAnalysisResults("ngram", groups, settings)
-			resultFile := filepath.Join("./results", generateResultsFileName(*input, "ngram"))
+			baseDir := getResultDir(*input, "ngram")
+			_ = os.MkdirAll(baseDir, 0755)
+			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "ngram"))
 			if err := writeTextAsHTML(resultFile, "N-Gram Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
@@ -1141,7 +1177,9 @@ func main() {
 				groups = append(groups, group)
 			}
 			resultData := FormatAnalysisResults("heuristic", groups, settings)
-			resultFile := filepath.Join("./results", generateResultsFileName(*input, "heuristic"))
+			baseDir := getResultDir(*input, "heuristic")
+			_ = os.MkdirAll(baseDir, 0755)
+			resultFile := filepath.Join(baseDir, generateResultsFileName(*input, "heuristic"))
 			if err := writeTextAsHTML(resultFile, "Heuristic Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
