@@ -79,6 +79,18 @@ func writeSimpleHTML(filePath, title, bodyHTML string) error {
 	return writeToFile(filePath, html)
 }
 
+// htmlEscape performs minimal HTML escaping for text content
+func htmlEscape(s string) string {
+	r := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+	return r.Replace(s)
+}
+
+// writeTextAsHTML wraps plain text in a <pre> and writes as HTML
+func writeTextAsHTML(filePath, title, text string) error {
+	body := "<pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:monospace\">" + htmlEscape(text) + "</pre>"
+	return writeSimpleHTML(filePath, title, body)
+}
+
 // WritePygroupsHTML renders a simple groups table similar to clones2html.py output
 func WritePygroupsHTML(targetPath string, groups []CloneGroup, filenames []string, avgTok float64, dirtyGrp int) error {
 	// files list

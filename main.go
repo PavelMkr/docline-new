@@ -193,7 +193,7 @@ func generateResultsFileName(inputPath, mode string) string {
 	nameWithoutExt := baseName[:len(baseName)-len(ext)]
 
 	// Form new file name
-	return fmt.Sprintf("%s_%s_results.txt", nameWithoutExt, mode)
+	return fmt.Sprintf("%s_%s_results.html", nameWithoutExt, mode)
 }
 
 func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
@@ -301,7 +301,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	// Format and save results text
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "heuristic"))
 	resultData := FormatAnalysisResults("heuristic", groups, data)
-	if err := writeToFile(resultFilePath, resultData); err != nil {
+	if err := writeTextAsHTML(resultFilePath, "Heuristic Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -452,7 +452,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	// Format and save results
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "ngram"))
 	resultData := FormatAnalysisResults("ngram", groups, data)
-	if err := writeToFile(resultFilePath, resultData); err != nil {
+	if err := writeTextAsHTML(resultFilePath, "N-Gram Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -674,7 +674,7 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	// Format and save results text
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "automatic"))
 	resultData := FormatAnalysisResults("automatic", groups, settings)
-	if err := writeToFile(resultFilePath, resultData); err != nil {
+	if err := writeTextAsHTML(resultFilePath, "Automatic Mode Analysis Results", resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -815,6 +815,9 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	heatmapHTML = preHTML
 	heatmapMu.Unlock()
 
+	// Save interactive heatmap to results directory
+	_ = writeSimpleHTML(filepath.Join("./results", "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+
 	// Format and save results
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "interactive"))
 	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
@@ -822,7 +825,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Results formatted, data length: %d bytes\n", len(resultData))
 
 	fmt.Printf("Attempting to write results to file...\n")
-	if err := writeToFile(resultFilePath, resultData); err != nil {
+	if err := writeTextAsHTML(resultFilePath, "Interactive Mode Analysis Results", resultData); err != nil {
 		fmt.Printf("Error writing to file: %v\n", err)
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
@@ -1056,7 +1059,7 @@ func main() {
 			}
 			resultData := FormatAnalysisResults("automatic", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "automatic"))
-			if err := writeToFile(resultFile, resultData); err != nil {
+			if err := writeTextAsHTML(resultFile, "Automatic Mode Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1078,7 +1081,7 @@ func main() {
 			}
 			resultData := FormatAnalysisResults("interactive", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "interactive"))
-			if err := writeToFile(resultFile, resultData); err != nil {
+			if err := writeTextAsHTML(resultFile, "Interactive Mode Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1089,6 +1092,8 @@ func main() {
 			heatmapMu.Lock()
 			heatmapHTML = preHTML
 			heatmapMu.Unlock()
+			// Save interactive heatmap to results directory
+			_ = writeSimpleHTML(filepath.Join("./results", "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
 			// Start interactive UI server and open browser, then block to keep it running
 			go startInteractiveHeatmapServer()
 			go openDefaultBrowser("http://127.0.0.1:49999/")
@@ -1108,7 +1113,7 @@ func main() {
 			groups := convertNGramResultsToGroups(duplicates)
 			resultData := FormatAnalysisResults("ngram", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "ngram"))
-			if err := writeToFile(resultFile, resultData); err != nil {
+			if err := writeTextAsHTML(resultFile, "N-Gram Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
@@ -1135,7 +1140,7 @@ func main() {
 			}
 			resultData := FormatAnalysisResults("heuristic", groups, settings)
 			resultFile := filepath.Join("./results", generateResultsFileName(*input, "heuristic"))
-			if err := writeToFile(resultFile, resultData); err != nil {
+			if err := writeTextAsHTML(resultFile, "Heuristic Analysis Results", resultData); err != nil {
 				fmt.Println("Failed to write result:", err)
 				os.Exit(1)
 			}
