@@ -7,8 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 )
 
 // FileUploadResponse represents the response on file upload
@@ -295,12 +298,27 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 		groups = append(groups, group)
 	}
 
-	// Format and save results
+	// Format and save results text
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "heuristic"))
 	resultData := FormatAnalysisResults("heuristic", groups, data)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
+	}
+
+	// Additional outputs per Heuristic Ngram Finder
+	// heuristic_finder/out.json
+	heurDir := filepath.Join("./results", "heuristic_finder")
+	if err := os.MkdirAll(heurDir, 0755); err == nil {
+		_ = writeJSON(filepath.Join(heurDir, "out.json"), map[string]any{
+			"ngrams": groups,
+		})
+	}
+	// <file>.neardups/pyvarelements.html
+	base := filepath.Base(filePath)
+	ndDir := filepath.Join("./results", base+".neardups")
+	if err := os.MkdirAll(ndDir, 0755); err == nil {
+		_ = WritePyVariativeElements(filepath.Join(ndDir, "pyvarelements.html"), groups)
 	}
 
 	// Convert groups to response format
@@ -419,7 +437,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 			tokens := strings.Fields(frag)
 			// Approximate the starting token index as 0 and compute length in tokens
 			// If the caller passes the full token stream later, replace this with findFirstTokenWindowIndex
-			// 
+			//
 			start := 0
 			end := start + len(tokens)
 			group.Fragments[i] = TextFragment{
@@ -438,6 +456,15 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	// Additional outputs per Ngram Duplicate Finder
+	// <file>.reformatted.result.txt and <file>.reformatted.groups.json and pyvarelements.html
+	base := filepath.Base(filePath)
+	reform := filepath.Join("./results", base+".reformatted.result.txt")
+	_ = writeToFile(reform, resultData)
+	groupsJSON := filepath.Join("./results", base+".reformatted.groups.json")
+	_ = writeJSON(groupsJSON, groups)
+	_ = WritePyVariativeElements(filepath.Join("./results", "pyvarelements.html"), groups)
 
 	// Convert groups to response format
 	responseGroups, _ := ConvertGroupsToResponse(groups, false)
@@ -644,12 +671,26 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Format and save results
+	// Format and save results text
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "automatic"))
 	resultData := FormatAnalysisResults("automatic", groups, settings)
 	if err := writeToFile(resultFilePath, resultData); err != nil {
 		http.Error(w, fmt.Sprintf("Error writing to file: %v", err), http.StatusInternalServerError)
 		return
+	}
+
+	// Console stats approximation
+	fmt.Printf("=> Ntok, Total groups, E(cl. length)\n")
+	fmt.Printf("%d, %5d, %.3f\n", settings.MinCloneLength, len(groups), AverageTokensInGroup(groups))
+
+	// Generate Automatic mode outputs similar to clones2html.py
+	outDir := filepath.Join("./results", "Output", fmt.Sprintf("%d", settings.MinCloneLength))
+	if err := os.MkdirAll(outDir, 0755); err == nil {
+		_ = WritePygroupsHTML(filepath.Join(outDir, "pygroups.html"), groups, []string{filepath.Base(filePath)}, AverageTokensInGroup(groups), len(groups))
+		_ = WritePyVariativeElements(filepath.Join(outDir, "pyvarelements.html"), groups)
+		tokens := strings.Fields(content)
+		_ = WriteDensityReports(outDir, len(tokens), groups)
+		_ = WriteShortTermsCSV(filepath.Join(outDir, "shortterms.csv"), groups, 3, 2)
 	}
 
 	// Convert groups to response format
@@ -767,6 +808,13 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Printf("Interactive mode processing completed, found %d groups\n", len(groups))
 
+	// Pre-generate heatmap HTML for server
+	tokens := strings.Fields(content)
+	preHTML := buildHeatmapHTML(len(tokens), groups)
+	heatmapMu.Lock()
+	heatmapHTML = preHTML
+	heatmapMu.Unlock()
+
 	// Format and save results
 	resultFilePath := filepath.Join("./results", generateResultsFileName(filePath, "interactive"))
 	fmt.Printf("Formatting results for file: %s\n", resultFilePath)
@@ -783,6 +831,9 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Convert groups to response format
 	responseGroups, archetypes := ConvertGroupsToResponse(groups, settings.UseArchetype)
+
+	// Start interactive heatmap server on first interactive request
+	startInteractiveOnce.Do(func() { go startInteractiveHeatmapServer() })
 
 	// Clean up temporary file if needed
 	if uploadedTempFile {
@@ -810,6 +861,145 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/ngram", ngramFinderHandler)
 	mux.HandleFunc("/automatic", automaticModeHandler)
 	mux.HandleFunc("/interactive", interactiveModeHandler)
+}
+
+var startInteractiveOnce sync.Once
+var openInteractiveOnce sync.Once
+var heatmapMu sync.RWMutex
+var heatmapHTML string
+
+// buildHeatmapHTML builds a simple token-density heatmap based on groups
+func buildHeatmapHTML(totalTokens int, groups []CloneGroup) string {
+	if totalTokens <= 0 {
+		return "<p>No data to display</p>"
+	}
+	density := make([]int, totalTokens)
+	maxv := 0
+	for _, g := range groups {
+		for _, f := range g.Fragments {
+			b := f.StartPos
+			e := f.EndPos
+			if b < 0 {
+				b = 0
+			}
+			if e > totalTokens {
+				e = totalTokens
+			}
+			for i := b; i < e; i++ {
+				density[i]++
+				if density[i] > maxv {
+					maxv = density[i]
+				}
+			}
+		}
+	}
+	if maxv == 0 {
+		maxv = 1
+	}
+	// bucketize into up to 600 bins to avoid huge DOM
+	bins := 600
+	if totalTokens < bins {
+		bins = totalTokens
+	}
+	binSize := (totalTokens + bins - 1) / bins
+	var sb strings.Builder
+	sb.WriteString("<div style=\"font-family:sans-serif\"><div>Density heatmap (" + fmt.Sprintf("%d", totalTokens) + " tokens)</div>")
+	sb.WriteString("<div style=\"white-space:nowrap;border:1px solid #ccc;height:24px\">")
+	for i := 0; i < totalTokens; i += binSize {
+		end := i + binSize
+		if end > totalTokens {
+			end = totalTokens
+		}
+		sum := 0
+		for j := i; j < end; j++ {
+			sum += density[j]
+		}
+		avg := float64(sum) / float64(end-i)
+		alpha := avg / float64(maxv)
+		if alpha > 1 {
+			alpha = 1
+		}
+		widthPct := float64(end-i) / float64(totalTokens) * 100.0
+		sb.WriteString(fmt.Sprintf("<span title=\"tokens %d-%d, avg=%.2f\" style=\"display:inline-block;height:24px;width:%.4f%%;background:rgba(255,0,0,%.3f)\"></span>", i, end, avg, widthPct, alpha))
+	}
+	sb.WriteString("</div>")
+	sb.WriteString("<p style=\"margin-top:8px;color:#666\">Red intensity = clone density. Hover to see bin stats.</p></div>")
+	return sb.String()
+}
+
+// startInteractiveHeatmapServer launches a minimal server at 127.0.0.1:49999
+// providing a heatmap and an endpoint to generate near-duplicates html
+func startInteractiveHeatmapServer() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		heatmapMu.RLock()
+		htmlBody := heatmapHTML
+		heatmapMu.RUnlock()
+		if htmlBody == "" {
+			htmlBody = "<p>No heatmap yet. Run interactive analysis to populate.</p>"
+		}
+		_ = writeSimpleHTMLToWriter(w, "Doc Clone Miner Heatmap", htmlBody)
+	})
+	mux.HandleFunc("/select", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		// For simplicity, accept JSON {"fragments":["...","..."]}
+		var body struct {
+			Fragments []string `json:"fragments"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		// produce pyvarelements.html in ./results
+		var groups []CloneGroup
+		if len(body.Fragments) > 0 {
+			g := CloneGroup{Power: len(body.Fragments)}
+			for _, f := range body.Fragments {
+				g.Fragments = append(g.Fragments, TextFragment{Content: f})
+			}
+			groups = append(groups, g)
+		}
+		target := filepath.Join("./results", "pyvarelements.html")
+		if err := WritePyVariativeElements(target, groups); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "report": target})
+	})
+	srv := &http.Server{Addr: "127.0.0.1:49999", Handler: mux}
+	fmt.Println("Interactive heatmap server on http://127.0.0.1:49999/")
+	// Attempt to open browser once when server starts the first time
+	openInteractiveOnce.Do(func() { go openDefaultBrowser("http://127.0.0.1:49999/") })
+	if err := srv.ListenAndServe(); err != nil {
+		fmt.Println("interactive server stopped:", err)
+	}
+}
+
+// writeSimpleHTMLToWriter mirrors writeSimpleHTML but writes to ResponseWriter
+func writeSimpleHTMLToWriter(w http.ResponseWriter, title, bodyHTML string) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, err := w.Write([]byte("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title=" + title + "</title></head><body><h2>" + title + "</h2>" + bodyHTML + "</body></html>"))
+	return err
+}
+
+// openDefaultBrowser tries to open the given URL in the user's default browser.
+func openDefaultBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default:
+		return
+	}
+	_ = cmd.Start()
 }
 
 func main() {
@@ -893,7 +1083,17 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Println("Analysis complete. Results saved to:", resultFile)
-			return
+			// Prepare heatmap before opening server
+			tokens := strings.Fields(content)
+			preHTML := buildHeatmapHTML(len(tokens), groups)
+			heatmapMu.Lock()
+			heatmapHTML = preHTML
+			heatmapMu.Unlock()
+			// Start interactive UI server and open browser, then block to keep it running
+			go startInteractiveHeatmapServer()
+			go openDefaultBrowser("http://127.0.0.1:49999/")
+			fmt.Println("Interactive heatmap available at http://127.0.0.1:49999/ (press Ctrl+C to exit)")
+			select {}
 		}
 		if *cliNGram {
 			settings := NgramDuplicateFinderData{
