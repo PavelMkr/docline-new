@@ -683,8 +683,10 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("=> Ntok, Total groups, E(cl. length)\n")
 	fmt.Printf("%d, %5d, %.3f\n", settings.MinCloneLength, len(groups), AverageTokensInGroup(groups))
 
-	// Generate Automatic mode outputs similar to clones2html.py
-	outDir := filepath.Join("./results", "Output", fmt.Sprintf("%d", settings.MinCloneLength))
+	// Generate Automatic mode outputs
+	baseName := filepath.Base(filePath)
+	baseNoExt := baseName[:len(baseName)-len(filepath.Ext(baseName))]
+	outDir := filepath.Join("./results", "Output", baseNoExt)
 	if err := os.MkdirAll(outDir, 0755); err == nil {
 		_ = WritePygroupsHTML(filepath.Join(outDir, "pygroups.html"), groups, []string{filepath.Base(filePath)}, AverageTokensInGroup(groups), len(groups))
 		_ = WritePyVariativeElements(filepath.Join(outDir, "pyvarelements.html"), groups)
