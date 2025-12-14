@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"Docline/framework"
 )
 
 // InteractiveModeSettings represents the settings for interactive mode
@@ -24,7 +26,7 @@ type InteractiveModeResponse struct {
 }
 
 // findInteractiveClones finds similar text fragments using interactive mode settings
-func findInteractiveClones(text string, settings InteractiveModeSettings) []CloneGroup {
+func findInteractiveClones(text string, settings InteractiveModeSettings) []framework.CloneGroup {
 	fmt.Printf("Starting clone search with settings: minLength=%d, maxLength=%d, minPower=%d\n",
 		settings.MinCloneLength, settings.MaxCloneLength, settings.MinGroupPower)
 
@@ -62,7 +64,7 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 	}
 
 	// Prepare container only for candidates meeting min power
-	potentialClones := make(map[string][]TextFragment)
+	potentialClones := make(map[string][]framework.TextFragment)
 	candidates := 0
 	for k, c := range freq {
 		if c >= settings.MinGroupPower {
@@ -78,7 +80,7 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 		window := tokens[i : i+length]
 		windowText := strings.Join(window, " ")
 		if _, ok := potentialClones[windowText]; ok {
-			potentialClones[windowText] = append(potentialClones[windowText], TextFragment{
+			potentialClones[windowText] = append(potentialClones[windowText], framework.TextFragment{
 				Content:  windowText,
 				StartPos: i,
 				EndPos:   i + length,
@@ -93,7 +95,7 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 	fmt.Printf("Collected positions for %d candidate fragments\n", len(potentialClones))
 
 	// Merge potential clones into groups using fuzzy similarity
-	var groups []CloneGroup
+	var groups []framework.CloneGroup
 	for text, fragments := range potentialClones {
 		// Try to find an existing group with similar archetype
 		placed := false
@@ -106,8 +108,8 @@ func findInteractiveClones(text string, settings InteractiveModeSettings) []Clon
 			}
 		}
 		if !placed {
-			groups = append(groups, CloneGroup{
-				Fragments: append([]TextFragment(nil), fragments...),
+			groups = append(groups, framework.CloneGroup{
+				Fragments: append([]framework.TextFragment(nil), fragments...),
 				Archetype: text,
 				Power:     len(fragments),
 			})
@@ -169,8 +171,8 @@ func isSimilarInteractive(a, b string) bool {
 }
 
 // filterInteractiveGroups filters clone groups based on interactive mode settings
-func filterInteractiveGroups(groups []CloneGroup, settings InteractiveModeSettings) []CloneGroup {
-	var filtered []CloneGroup
+func filterInteractiveGroups(groups []framework.CloneGroup, settings InteractiveModeSettings) []framework.CloneGroup {
+	var filtered []framework.CloneGroup
 
 	for _, group := range groups {
 		// Skip groups with insufficient power
@@ -189,7 +191,7 @@ func filterInteractiveGroups(groups []CloneGroup, settings InteractiveModeSettin
 		}
 
 		// Remove overlapping fragments
-		var nonOverlapping []TextFragment
+		var nonOverlapping []framework.TextFragment
 		for i, frag := range group.Fragments {
 			overlaps := false
 			for j := 0; j < i; j++ {
@@ -214,7 +216,7 @@ func filterInteractiveGroups(groups []CloneGroup, settings InteractiveModeSettin
 }
 
 // calculateArchetypes calculates archetypes for clone groups
-func calculateArchetypes(groups *[]CloneGroup) {
+func calculateArchetypes(groups *[]framework.CloneGroup) {
 	for i := range *groups {
 		group := &(*groups)[i]
 		if len(group.Fragments) == 0 {
@@ -278,7 +280,7 @@ func calculateArchetypes(groups *[]CloneGroup) {
 }
 
 // ProcessInteractiveMode processes the text using interactive mode settings
-func ProcessInteractiveMode(text string, settings InteractiveModeSettings) ([]CloneGroup, error) {
+func ProcessInteractiveMode(text string, settings InteractiveModeSettings) ([]framework.CloneGroup, error) {
 	// Find clones
 	groups := findInteractiveClones(text, settings)
 
@@ -286,7 +288,7 @@ func ProcessInteractiveMode(text string, settings InteractiveModeSettings) ([]Cl
 }
 
 // FormatInteractiveModeResults formats the analysis results for output
-func FormatInteractiveModeResults(groups []CloneGroup, settings InteractiveModeSettings) string {
+func FormatInteractiveModeResults(groups []framework.CloneGroup, settings InteractiveModeSettings) string {
 	var sb strings.Builder
 
 	sb.WriteString("Interactive Mode Analysis Results\n")

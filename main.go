@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"Docline/framework"
 )
 
 // FileUploadResponse represents the response on file upload
@@ -29,7 +31,7 @@ type UploadSettings struct {
 	SourceLanguage string `json:"source_language"`
 }
 
-// Common structures for analysis results
+// AnalysisResult represents HTTP response for analysis results
 type AnalysisResult struct {
 	Status      string              `json:"status"`
 	Message     string              `json:"message"`
@@ -38,20 +40,8 @@ type AnalysisResult struct {
 	ResultsFile string              `json:"results_file,omitempty"`
 }
 
-type CloneGroup struct {
-	Fragments []TextFragment
-	Power     int
-	Archetype string
-}
-
-type TextFragment struct {
-	Content  string
-	StartPos int
-	EndPos   int
-}
-
 // setDefaultArchetypes ensures every group has Archetype; uses first fragment content if empty
-func setDefaultArchetypes(groups []CloneGroup) {
+func setDefaultArchetypes(groups []framework.CloneGroup) {
 	for gi := range groups {
 		if groups[gi].Archetype == "" && len(groups[gi].Fragments) > 0 {
 			groups[gi].Archetype = groups[gi].Fragments[0].Content
@@ -59,18 +49,18 @@ func setDefaultArchetypes(groups []CloneGroup) {
 	}
 }
 
-func convertNGramResultsToGroups(ngramResults map[string][]string) []CloneGroup {
-	var groups []CloneGroup
+func convertNGramResultsToGroups(ngramResults map[string][]string) []framework.CloneGroup {
+	var groups []framework.CloneGroup
 	for _, fragments := range ngramResults {
-		group := CloneGroup{
-			Fragments: make([]TextFragment, len(fragments)),
+		group := framework.CloneGroup{
+			Fragments: make([]framework.TextFragment, len(fragments)),
 			Power:     len(fragments),
 		}
 		for i, frag := range fragments {
 			fragTokens := strings.Fields(frag)
 			start := findFirstTokenWindowIndex(fragTokens, fragTokens)
 			end := start + len(fragTokens)
-			group.Fragments[i] = TextFragment{
+			group.Fragments[i] = framework.TextFragment{
 				Content:  frag,
 				StartPos: start,
 				EndPos:   end,
@@ -107,7 +97,7 @@ func findFirstTokenWindowIndex(hayTokens, needleTokens []string) int {
 }
 
 // FormatAnalysisResults formats the analysis results for output
-func FormatAnalysisResults(method string, groups []CloneGroup, settings interface{}) string {
+func FormatAnalysisResults(method string, groups []framework.CloneGroup, settings interface{}) string {
 	var sb strings.Builder
 
 	// Write header based on method
@@ -169,7 +159,7 @@ func FormatAnalysisResults(method string, groups []CloneGroup, settings interfac
 }
 
 // ConvertGroupsToResponse converts clone groups to response format
-func ConvertGroupsToResponse(groups []CloneGroup, useArchetypes bool) (map[string][]string, map[string]string) {
+func ConvertGroupsToResponse(groups []framework.CloneGroup, useArchetypes bool) (map[string][]string, map[string]string) {
 	responseGroups := make(map[string][]string)
 	archetypes := make(map[string]string)
 
@@ -303,11 +293,11 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	ngrams := HeuristicNgramAnalysis(data, text, 2)
 
 	// Convert ngrams to clone groups format
-	var groups []CloneGroup
+	var groups []framework.CloneGroup
 	for _, ngram := range ngrams {
 		tokens := strings.Fields(ngram)
-		group := CloneGroup{
-			Fragments: []TextFragment{{
+		group := framework.CloneGroup{
+			Fragments: []framework.TextFragment{{
 				Content:  ngram,
 				StartPos: 0,
 				EndPos:   len(tokens),
@@ -454,8 +444,8 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	groups := convertNGramResultsToGroups(duplicates)
 	setDefaultArchetypes(groups)
 	for _, fragments := range duplicates {
-		group := CloneGroup{
-			Fragments: make([]TextFragment, len(fragments)),
+		group := framework.CloneGroup{
+			Fragments: make([]framework.TextFragment, len(fragments)),
 			Power:     len(fragments),
 		}
 		for i, frag := range fragments {
@@ -465,7 +455,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 			//
 			start := 0
 			end := start + len(tokens)
-			group.Fragments[i] = TextFragment{
+			group.Fragments[i] = framework.TextFragment{
 				Content:  frag,
 				StartPos: start,
 				EndPos:   end,
@@ -504,7 +494,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := AnalysisResult{
+	response := AnalysisResult{  
 		Status:      "success",
 		Message:     "N-gram analysis completed",
 		Groups:      responseGroups,
@@ -912,7 +902,7 @@ var interactiveDirMu sync.RWMutex
 var interactiveCurrentDir string
 
 // buildHeatmapHTML builds a simple token-density heatmap based on groups
-func buildHeatmapHTML(totalTokens int, groups []CloneGroup) string {
+func buildHeatmapHTML(totalTokens int, groups []framework.CloneGroup) string {
 	if totalTokens <= 0 {
 		return "<p>No data to display</p>"
 	}
@@ -997,11 +987,11 @@ func startInteractiveHeatmapServer() {
 			return
 		}
 		// produce pyvarelements.html in results/interactive/<file>/
-		var groups []CloneGroup
+		var groups []framework.CloneGroup
 		if len(body.Fragments) > 0 {
-			g := CloneGroup{Power: len(body.Fragments)}
+			g := framework.CloneGroup{Power: len(body.Fragments)}
 			for _, f := range body.Fragments {
-				g.Fragments = append(g.Fragments, TextFragment{Content: f})
+				g.Fragments = append(g.Fragments, framework.TextFragment{Content: f})
 			}
 			groups = append(groups, g)
 		}
@@ -1185,10 +1175,10 @@ func main() {
 				FilePath:               *input,
 			}
 			ngrams := HeuristicNgramAnalysis(settings, content, 2)
-			var groups []CloneGroup
+			var groups []framework.CloneGroup
 			for _, ngram := range ngrams {
-				group := CloneGroup{
-					Fragments: []TextFragment{{
+				group := framework.CloneGroup{
+					Fragments: []framework.TextFragment{{
 						Content:  ngram,
 						StartPos: 0, // TODO: Calculate actual positions
 						EndPos:   1,

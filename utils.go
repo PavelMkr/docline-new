@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"Docline/framework"
 )
 
 // GenerateNGrams creates n-grams from input text.
@@ -104,7 +106,7 @@ func tokenPreview(text string, n int) string {
 }
 
 // WriteResultsHTML writes a structured, readable HTML report for clone groups
-func WriteResultsHTML(filePath, title string, groups []CloneGroup, settingsHTML string, sourceFile string) error {
+func WriteResultsHTML(filePath, title string, groups []framework.CloneGroup, settingsHTML string, sourceFile string) error {
 	// compute summary
 	totalGroups := len(groups)
 	totalFragments := 0
@@ -163,7 +165,7 @@ func WriteResultsHTML(filePath, title string, groups []CloneGroup, settingsHTML 
 }
 
 // WritePygroupsHTML renders a simple groups table similar to clones2html.py output
-func WritePygroupsHTML(targetPath string, groups []CloneGroup, filenames []string, avgTok float64, dirtyGrp int) error {
+func WritePygroupsHTML(targetPath string, groups []framework.CloneGroup, filenames []string, avgTok float64, dirtyGrp int) error {
 	// files list
 	var sb strings.Builder
 	if len(filenames) > 0 {
@@ -198,7 +200,7 @@ func WritePygroupsHTML(targetPath string, groups []CloneGroup, filenames []strin
 }
 
 // WritePyVariativeElements renders a minimal interactive-like report placeholder
-func WritePyVariativeElements(targetPath string, groups []CloneGroup) error {
+func WritePyVariativeElements(targetPath string, groups []framework.CloneGroup) error {
 	var sb strings.Builder
 	sb.WriteString("<p>Variative elements (simplified)</p>")
 	for i, g := range groups {
@@ -216,7 +218,7 @@ func WritePyVariativeElements(targetPath string, groups []CloneGroup) error {
 }
 
 // WriteDensityReports writes placeholder density visualizations
-func WriteDensityReports(dir string, totalTokens int, groups []CloneGroup) error {
+func WriteDensityReports(dir string, totalTokens int, groups []framework.CloneGroup) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -335,7 +337,7 @@ func maxInt(a, b int) int {
 }
 
 // WriteShortTermsCSV writes a basic short terms CSV for groups with <= maxTokens
-func WriteShortTermsCSV(targetPath string, groups []CloneGroup, maxTokens, minOccurs int) error {
+func WriteShortTermsCSV(targetPath string, groups []framework.CloneGroup, maxTokens, minOccurs int) error {
 	var sb strings.Builder
 	sb.WriteString("\uFEFF") // BOM for Excel friendliness
 	sb.WriteString("N tokens;Occurs times;Text\n")
@@ -355,7 +357,7 @@ func WriteShortTermsCSV(targetPath string, groups []CloneGroup, maxTokens, minOc
 }
 
 // AverageTokensInGroup computes average token length over all fragments
-func AverageTokensInGroup(groups []CloneGroup) float64 {
+func AverageTokensInGroup(groups []framework.CloneGroup) float64 {
 	total := 0
 	count := 0
 	for _, g := range groups {

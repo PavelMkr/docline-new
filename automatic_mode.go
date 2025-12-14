@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"Docline/framework"
 )
 
 // AutomaticModeSettings represents the settings for automatic mode
@@ -40,7 +42,7 @@ func convertToDRL(text string) string {
 }
 
 // findClones finds similar text fragments using the Clone Miner algorithm
-func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
+func findClones(text string, settings AutomaticModeSettings) []framework.CloneGroup {
 	// Split text into tokens
 	tokens := strings.Fields(text)
 	if len(tokens) < settings.MinCloneLength {
@@ -62,7 +64,7 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 	}
 
 	// Pass 2: collect positions for windows with freq >= 2
-	candidates := make(map[string][]TextFragment)
+	candidates := make(map[string][]framework.TextFragment)
 	for k, c := range freq {
 		if c >= 2 {
 			candidates[k] = nil
@@ -71,7 +73,7 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 	for i := 0; i <= len(tokens)-windowSize; i++ {
 		w := strings.Join(tokens[i:i+windowSize], " ")
 		if _, ok := candidates[w]; ok {
-			candidates[w] = append(candidates[w], TextFragment{
+			candidates[w] = append(candidates[w], framework.TextFragment{
 				Content:  w,
 				StartPos: i,
 				EndPos:   i + windowSize,
@@ -80,12 +82,12 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 	}
 
 	// Build groups
-	var groups []CloneGroup
+	var groups []framework.CloneGroup
 	for archetype, frags := range candidates {
 		if len(frags) < 2 {
 			continue
 		}
-		groups = append(groups, CloneGroup{
+		groups = append(groups, framework.CloneGroup{
 			Fragments: frags,
 			Power:     len(frags),
 			Archetype: archetype,
@@ -93,7 +95,7 @@ func findClones(text string, settings AutomaticModeSettings) []CloneGroup {
 	}
 
 	// Merge groups with similar archetypes using isSimilar
-	var merged []CloneGroup
+	var merged []framework.CloneGroup
 	for _, g := range groups {
 		mergedIntoExisting := false
 		for mi := range merged {
@@ -159,8 +161,8 @@ func isSimilar(a, b string) bool {
 }
 
 // filterCloneGroups applies strict filtering to clone groups
-func filterCloneGroups(groups []CloneGroup, settings AutomaticModeSettings) []CloneGroup {
-	var filtered []CloneGroup
+func filterCloneGroups(groups []framework.CloneGroup, settings AutomaticModeSettings) []framework.CloneGroup {
+	var filtered []framework.CloneGroup
 
 	for _, group := range groups {
 		// Skip groups with too few fragments
@@ -174,7 +176,7 @@ func filterCloneGroups(groups []CloneGroup, settings AutomaticModeSettings) []Cl
 		}
 
 		// Remove overlapping fragments
-		var nonOverlapping []TextFragment
+		var nonOverlapping []framework.TextFragment
 		for i, frag := range group.Fragments {
 			overlaps := false
 			for j := 0; j < i; j++ {
@@ -199,12 +201,12 @@ func filterCloneGroups(groups []CloneGroup, settings AutomaticModeSettings) []Cl
 }
 
 // hasOverlap checks if two text fragments overlap
-func hasOverlap(a, b TextFragment) bool {
+func hasOverlap(a, b framework.TextFragment) bool {
 	return (a.StartPos <= b.EndPos && b.StartPos <= a.EndPos)
 }
 
 // ProcessAutomaticMode processes the text using automatic mode settings
-func ProcessAutomaticMode(text string, settings AutomaticModeSettings) ([]CloneGroup, error) {
+func ProcessAutomaticMode(text string, settings AutomaticModeSettings) ([]framework.CloneGroup, error) {
 	// Convert to DRL if needed
 	if settings.ConvertToDRL {
 		text = convertToDRL(text)
@@ -228,7 +230,7 @@ func ProcessAutomaticMode(text string, settings AutomaticModeSettings) ([]CloneG
 }
 
 // FormatAutomaticModeResults formats the analysis results for output
-func FormatAutomaticModeResults(groups []CloneGroup, settings AutomaticModeSettings) string {
+func FormatAutomaticModeResults(groups []framework.CloneGroup, settings AutomaticModeSettings) string {
 	var sb strings.Builder
 
 	sb.WriteString("Automatic Mode Analysis Results\n")
