@@ -1032,7 +1032,7 @@ func startInteractiveHeatmapServer() {
 // writeSimpleHTMLToWriter mirrors writeSimpleHTML but writes to ResponseWriter
 func writeSimpleHTMLToWriter(w http.ResponseWriter, title, bodyHTML string) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, err := w.Write([]byte("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title=" + title + "</title></head><body><h2>" + title + "</h2>" + bodyHTML + "</body></html>"))
+	_, err := w.Write([]byte("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" + title + "</title></head><body><h2>" + title + "</h2>" + bodyHTML + "</body></html>"))
 	return err
 }
 
