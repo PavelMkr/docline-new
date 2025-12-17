@@ -24,6 +24,7 @@ func (a *AutomaticModeAdapter) Description() string {
 func (a *AutomaticModeAdapter) FindClones(text string, config CloneFinderConfig) ([]CloneGroup, error) {
 	// This would call the existing ProcessAutomaticMode function
 	// For now, return empty - will be implemented when refactoring
+	// TODO
 	return nil, fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -40,6 +41,7 @@ func (a *InteractiveModeAdapter) Description() string {
 
 func (a *InteractiveModeAdapter) FindClones(text string, config CloneFinderConfig) ([]CloneGroup, error) {
 	// This would call the existing ProcessInteractiveMode function
+	// TODO
 	return nil, fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -56,6 +58,7 @@ func (a *NGramAdapter) Description() string {
 
 func (a *NGramAdapter) FindClones(text string, config CloneFinderConfig) ([]CloneGroup, error) {
 	// This would call the existing FindDuplicatesByNGram function
+	// TODO
 	return nil, fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -120,6 +123,7 @@ func (d *DocBookParserAdapter) SupportedFormats() []string {
 
 func (d *DocBookParserAdapter) Parse(reader io.Reader) ([]string, error) {
 	// This would use the existing parser
+	// TODO
 	return nil, fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -134,6 +138,7 @@ func (p *PandocConverterAdapter) Name() string {
 
 func (p *PandocConverterAdapter) Convert(inputPath string, outputFormat string) (string, error) {
 	// This would use the existing converter
+	// TODO
 	return "", fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -163,6 +168,7 @@ func (h *HTMLReportGenerator) Format() string {
 
 func (h *HTMLReportGenerator) Generate(groups []CloneGroup, config ReportConfig, outputPath string) error {
 	// This would use the existing WriteResultsHTML function
+	// TODO
 	return fmt.Errorf("not yet implemented - requires refactoring")
 }
 
@@ -179,6 +185,7 @@ func (j *JSONReportGenerator) Format() string {
 
 func (j *JSONReportGenerator) Generate(groups []CloneGroup, config ReportConfig, outputPath string) error {
 	// This would generate JSON output
+	// TODO
 	return fmt.Errorf("not yet implemented - requires refactoring")
 }
 

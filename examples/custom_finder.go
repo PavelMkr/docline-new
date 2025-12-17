@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	"strings"
 
 	"Docline/framework"
@@ -23,7 +23,7 @@ func (c *CustomCloneFinder) Description() string {
 func (c *CustomCloneFinder) FindClones(text string, config framework.CloneFinderConfig) ([]framework.CloneGroup, error) {
 	// Split text into sentences
 	sentences := strings.Split(text, ".")
-	
+
 	// Find duplicate sentences
 	sentenceMap := make(map[string][]framework.TextFragment)
 	for i, sentence := range sentences {
@@ -31,13 +31,13 @@ func (c *CustomCloneFinder) FindClones(text string, config framework.CloneFinder
 		if len(sentence) < config.MinCloneLength {
 			continue
 		}
-		
+
 		// Simple token count
 		tokens := strings.Fields(sentence)
 		if len(tokens) < config.MinCloneLength {
 			continue
 		}
-		
+
 		// Track position (approximate)
 		startPos := 0
 		if i > 0 {
@@ -46,16 +46,16 @@ func (c *CustomCloneFinder) FindClones(text string, config framework.CloneFinder
 				startPos += len(strings.Fields(sentences[j]))
 			}
 		}
-		
+
 		frag := framework.TextFragment{
 			Content:  sentence,
 			StartPos: startPos,
 			EndPos:   startPos + len(tokens),
 		}
-		
+
 		sentenceMap[sentence] = append(sentenceMap[sentence], frag)
 	}
-	
+
 	// Build groups
 	var groups []framework.CloneGroup
 	for sentence, fragments := range sentenceMap {
@@ -67,35 +67,34 @@ func (c *CustomCloneFinder) FindClones(text string, config framework.CloneFinder
 			})
 		}
 	}
-	
+
 	return groups, nil
 }
 
-func main() {
-	// Create framework
-	fw := framework.NewFramework(nil)
-	
-	// Register custom finder
-	customFinder := &CustomCloneFinder{name: "custom-sentence"}
-	err := fw.GetRegistry().RegisterCloneFinder(customFinder)
-	if err != nil {
-		panic(err)
-	}
-	
-	// Use custom finder
-	result, err := fw.AnalyzeDocument(
-		"example.txt",
-		"custom-sentence",
-		framework.CloneFinderConfig{
-			MinCloneLength: 5,
-			MinGroupPower:  2,
-		},
-	)
-	
-	if err != nil {
-		panic(err)
-	}
-	
-	fmt.Printf("Custom finder found %d groups\n", len(result.Groups))
-}
+// func main() {
+// 	// Create framework
+// 	fw := framework.NewFramework(nil)
 
+// 	// Register custom finder
+// 	customFinder := &CustomCloneFinder{name: "custom-sentence"}
+// 	err := fw.GetRegistry().RegisterCloneFinder(customFinder)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	// Use custom finder
+// 	result, err := fw.AnalyzeDocument(
+// 		"example.txt",
+// 		"custom-sentence",
+// 		framework.CloneFinderConfig{
+// 			MinCloneLength: 5,
+// 			MinGroupPower:  2,
+// 		},
+// 	)
+
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	fmt.Printf("Custom finder found %d groups\n", len(result.Groups))
+// }
