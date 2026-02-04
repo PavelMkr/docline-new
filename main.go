@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"Docline/framework"
+	"Docline/internal"
 )
 
 // FileUploadResponse represents the response on file upload
@@ -105,7 +106,7 @@ func FormatAnalysisResults(method string, groups []framework.CloneGroup, setting
 	case "automatic":
 		sb.WriteString("Automatic Mode Analysis Results\n")
 		sb.WriteString("=============================\n\n")
-		if s, ok := settings.(AutomaticModeSettings); ok {
+		if s, ok := settings.(internal.AutomaticModeSettings); ok {
 			sb.WriteString(fmt.Sprintf("Settings:\n"))
 			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneLength))
 			sb.WriteString(fmt.Sprintf("- Convert to DRL: %v\n", s.ConvertToDRL))
@@ -115,7 +116,7 @@ func FormatAnalysisResults(method string, groups []framework.CloneGroup, setting
 	case "interactive":
 		sb.WriteString("Interactive Mode Analysis Results\n")
 		sb.WriteString("===============================\n\n")
-		if s, ok := settings.(InteractiveModeSettings); ok {
+		if s, ok := settings.(internal.InteractiveModeSettings); ok {
 			sb.WriteString(fmt.Sprintf("Settings:\n"))
 			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneLength))
 			sb.WriteString(fmt.Sprintf("- Maximal Clone Length: %d tokens\n", s.MaxCloneLength))
@@ -125,7 +126,7 @@ func FormatAnalysisResults(method string, groups []framework.CloneGroup, setting
 	case "ngram":
 		sb.WriteString("N-Gram Analysis Results\n")
 		sb.WriteString("======================\n\n")
-		if s, ok := settings.(NgramDuplicateFinderData); ok {
+		if s, ok := settings.(internal.NgramDuplicateFinderData); ok {
 			sb.WriteString(fmt.Sprintf("Settings:\n"))
 			sb.WriteString(fmt.Sprintf("- Minimal Clone Length: %d tokens\n", s.MinCloneSlider))
 			sb.WriteString(fmt.Sprintf("- Max Edit Distance: %d\n", s.MaxEditSlider))
@@ -135,7 +136,7 @@ func FormatAnalysisResults(method string, groups []framework.CloneGroup, setting
 	case "heuristic":
 		sb.WriteString("Heuristic Analysis Results\n")
 		sb.WriteString("========================\n\n")
-		if s, ok := settings.(HeuristicNgramFinderData); ok {
+		if s, ok := settings.(internal.HeuristicNgramFinderData); ok {
 			sb.WriteString(fmt.Sprintf("Settings:\n"))
 			sb.WriteString(fmt.Sprintf("- Extension Point Check: %v\n\n", s.ExtensionPointCheckbox))
 		}
@@ -217,7 +218,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data HeuristicNgramFinderData
+	var data internal.HeuristicNgramFinderData
 	var filePath string
 	var uploadedTempFile bool = false
 
@@ -275,12 +276,12 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check file format
-	if err := validateFileFormat(filePath); err != nil {
+	if err := ValidateFileFormat(filePath); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	text, err := readFileContent(filePath)
+	text, err := ReadFileContent(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.Error(w, fmt.Sprintf("File not found: %s", filePath), http.StatusBadRequest)
@@ -290,7 +291,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ngrams := HeuristicNgramAnalysis(data, text, 2)
+	ngrams := internal.HeuristicNgramAnalysis(data, text, 2)
 
 	// Convert ngrams to clone groups format
 	var groups []framework.CloneGroup
@@ -324,7 +325,7 @@ func heuristicFinderHandler(w http.ResponseWriter, r *http.Request) {
 	// heuristic_finder/out.json
 	heurDir := filepath.Join(baseDir, "heuristic_finder")
 	if err := os.MkdirAll(heurDir, 0755); err == nil {
-		_ = writeJSON(filepath.Join(heurDir, "out.json"), map[string]any{
+		_ = WriteJSON(filepath.Join(heurDir, "out.json"), map[string]any{
 			"ngrams": groups,
 		})
 	}
@@ -368,7 +369,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data NgramDuplicateFinderData
+	var data internal.NgramDuplicateFinderData
 	var filePath string
 	var uploadedTempFile bool = false
 
@@ -426,19 +427,19 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check file format
-	if err := validateFileFormat(filePath); err != nil {
+	if err := ValidateFileFormat(filePath); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	content, err := readFileContent(filePath)
+	content, err := ReadFileContent(filePath)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
 
-	parts := splitTextIntoParts(content)
-	duplicates := FindDuplicatesByNGram(data, parts)
+	parts := SplitTextIntoParts(content)
+	duplicates := internal.FindDuplicatesByNGram(data, parts)
 
 	// Convert duplicates to clone groups format
 	groups := convertNGramResultsToGroups(duplicates)
@@ -479,9 +480,9 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 	base := filepath.Base(filePath)
 	reform := filepath.Join(baseDir, base+".reformatted.result.html")
 	reformText := FormatAnalysisResults("ngram", groups, data)
-	_ = writeTextAsHTML(reform, "N-Gram Reformatted Result", reformText)
+	_ = WriteTextAsHTML(reform, "N-Gram Reformatted Result", reformText)
 	groupsJSON := filepath.Join(baseDir, base+".reformatted.groups.json")
-	_ = writeJSON(groupsJSON, groups)
+	_ = WriteJSON(groupsJSON, groups)
 	_ = WritePyVariativeElements(filepath.Join(baseDir, "pyvarelements.html"), groups)
 
 	// Convert groups to response format
@@ -494,7 +495,7 @@ func ngramFinderHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := AnalysisResult{  
+	response := AnalysisResult{
 		Status:      "success",
 		Message:     "N-gram analysis completed",
 		Groups:      responseGroups,
@@ -549,7 +550,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check file format
-	if err := validateFileFormat(filePath); err != nil {
+	if err := ValidateFileFormat(filePath); err != nil {
 		// remove uploaded file if the format is not supported
 		os.Remove(filePath)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -566,17 +567,17 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read file content
-	content, err := readFileContent(filePath)
+	content, err := ReadFileContent(filePath)
 	if err != nil {
 		http.Error(w, "Failed to read file content", http.StatusInternalServerError)
 		return
 	}
 
 	// Split text into parts
-	parts := splitTextIntoParts(content)
+	parts := SplitTextIntoParts(content)
 
 	// Find duplicates
-	data := NgramDuplicateFinderData{
+	data := internal.NgramDuplicateFinderData{
 		MinCloneSlider: settings.MinCloneSlider,
 		MaxEditSlider:  settings.MaxEditSlider,
 		MaxFuzzySlider: settings.MaxFuzzySlider,
@@ -584,7 +585,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		FilePath:       filePath,
 	}
 	fmt.Printf("data: %+v\n", data)
-	duplicates := FindDuplicatesByNGram(data, parts)
+	duplicates := internal.FindDuplicatesByNGram(data, parts)
 
 	// Form response
 	response := FileUploadResponse{
@@ -610,7 +611,7 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var settings AutomaticModeSettings
+	var settings internal.AutomaticModeSettings
 	var filePath string
 	var uploadedTempFile bool = false
 
@@ -670,20 +671,20 @@ func automaticModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check file format
-	if err := validateFileFormat(filePath); err != nil {
+	if err := ValidateFileFormat(filePath); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Read and process file content
-	content, err := readFileContent(filePath)
+	content, err := ReadFileContent(filePath)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
 
 	// Process content using automatic mode
-	groups, err := ProcessAutomaticMode(content, settings)
+	groups, err := internal.ProcessAutomaticMode(content, settings)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error processing content: %v", err), http.StatusInternalServerError)
 		return
@@ -747,7 +748,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var settings InteractiveModeSettings
+	var settings internal.InteractiveModeSettings
 	var filePath string
 	var uploadedTempFile bool = false
 
@@ -807,13 +808,13 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check file format
-	if err := validateFileFormat(filePath); err != nil {
+	if err := ValidateFileFormat(filePath); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Read and process file content
-	content, err := readFileContent(filePath)
+	content, err := ReadFileContent(filePath)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading file '%s': %v", filePath, err), http.StatusInternalServerError)
 		return
@@ -821,7 +822,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Process content using interactive mode
 	fmt.Printf("Starting interactive mode processing with settings: %+v\n", settings)
-	groups, err := ProcessInteractiveMode(content, settings)
+	groups, err := internal.ProcessInteractiveMode(content, settings)
 	if err != nil {
 		fmt.Printf("Error in ProcessInteractiveMode: %v\n", err)
 		http.Error(w, fmt.Sprintf("Error processing content: %v", err), http.StatusInternalServerError)
@@ -842,7 +843,7 @@ func interactiveModeHandler(w http.ResponseWriter, r *http.Request) {
 	// Prepare baseDir for interactive and save heatmap there
 	baseDir := getResultDir(filePath, "interactive")
 	_ = os.MkdirAll(baseDir, 0755)
-	_ = writeSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+	_ = WriteSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
 	// Persist current interactive dir for /select endpoint
 	interactiveDirMu.Lock()
 	interactiveCurrentDir = baseDir
@@ -971,7 +972,7 @@ func startInteractiveHeatmapServer() {
 		if htmlBody == "" {
 			htmlBody = "<p>No heatmap yet. Run interactive analysis to populate.</p>"
 		}
-		_ = writeSimpleHTMLToWriter(w, "Doc Clone Miner Heatmap", htmlBody)
+		_ = WriteSimpleHTMLToWriter(w, "Doc Clone Miner Heatmap", htmlBody)
 	})
 	mux.HandleFunc("/select", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -1019,8 +1020,8 @@ func startInteractiveHeatmapServer() {
 	}
 }
 
-// writeSimpleHTMLToWriter mirrors writeSimpleHTML but writes to ResponseWriter
-func writeSimpleHTMLToWriter(w http.ResponseWriter, title, bodyHTML string) error {
+// WriteSimpleHTMLToWriter mirrors WriteSimpleHTML but writes to ResponseWriter
+func WriteSimpleHTMLToWriter(w http.ResponseWriter, title, bodyHTML string) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, err := w.Write([]byte("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" + title + "</title></head><body><h2>" + title + "</h2>" + bodyHTML + "</body></html>"))
 	return err
@@ -1072,24 +1073,24 @@ func main() {
 			fmt.Println("Failed to create results dir:", err)
 			os.Exit(1)
 		}
-		if err := validateFileFormat(*input); err != nil {
+		if err := ValidateFileFormat(*input); err != nil {
 			fmt.Println("File format error:", err)
 			os.Exit(1)
 		}
-		content, err := readFileContent(*input)
+		content, err := ReadFileContent(*input)
 		if err != nil {
 			fmt.Println("Failed to read file:", err)
 			os.Exit(1)
 		}
 		if *cliAuto {
-			settings := AutomaticModeSettings{
+			settings := internal.AutomaticModeSettings{
 				MinCloneLength:  *minClone,
 				ConvertToDRL:    *convertToDRL,
 				ArchetypeLength: *archetype,
 				StrictFilter:    *strict,
 				FilePath:        *input,
 			}
-			groups, err := ProcessAutomaticMode(content, settings)
+			groups, err := internal.ProcessAutomaticMode(content, settings)
 			if err != nil {
 				fmt.Println("Analysis error:", err)
 				os.Exit(1)
@@ -1106,14 +1107,14 @@ func main() {
 			return
 		}
 		if *cliInter {
-			settings := InteractiveModeSettings{
+			settings := internal.InteractiveModeSettings{
 				MinCloneLength: *minClone,
 				MaxCloneLength: *maxClone,
 				MinGroupPower:  *minGroup,
 				UseArchetype:   *useArch,
 				FilePath:       *input,
 			}
-			groups, err := ProcessInteractiveMode(content, settings)
+			groups, err := internal.ProcessInteractiveMode(content, settings)
 			if err != nil {
 				fmt.Println("Analysis error:", err)
 				os.Exit(1)
@@ -1137,7 +1138,7 @@ func main() {
 			heatmapHTML = preHTML
 			heatmapMu.Unlock()
 			// Save interactive heatmap to results/interactive/<file>
-			_ = writeSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
+			_ = WriteSimpleHTML(filepath.Join(baseDir, "interactive_heatmap.html"), "Interactive Heatmap", preHTML)
 			interactiveDirMu.Lock()
 			interactiveCurrentDir = baseDir
 			interactiveDirMu.Unlock()
@@ -1148,15 +1149,15 @@ func main() {
 			select {}
 		}
 		if *cliNGram {
-			settings := NgramDuplicateFinderData{
+			settings := internal.NgramDuplicateFinderData{
 				MinCloneSlider: *minClone,
 				MaxEditSlider:  *maxDist,
 				MaxFuzzySlider: *maxEdit,
 				SourceLanguage: *sourceLang,
 				FilePath:       *input,
 			}
-			parts := splitTextIntoParts(content)
-			duplicates := FindDuplicatesByNGram(settings, parts)
+			parts := SplitTextIntoParts(content)
+			duplicates := internal.FindDuplicatesByNGram(settings, parts)
 			groups := convertNGramResultsToGroups(duplicates)
 			baseDir := getResultDir(*input, "ngram")
 			_ = os.MkdirAll(baseDir, 0755)
@@ -1170,11 +1171,11 @@ func main() {
 			return
 		}
 		if *cliHeur {
-			settings := HeuristicNgramFinderData{
+			settings := internal.HeuristicNgramFinderData{
 				ExtensionPointCheckbox: *extention,
 				FilePath:               *input,
 			}
-			ngrams := HeuristicNgramAnalysis(settings, content, 2)
+			ngrams := internal.HeuristicNgramAnalysis(settings, content, 2)
 			var groups []framework.CloneGroup
 			for _, ngram := range ngrams {
 				group := framework.CloneGroup{

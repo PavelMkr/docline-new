@@ -9,17 +9,9 @@ import (
 	"strings"
 
 	"Docline/framework"
+	"Docline/internal"
 )
 
-// GenerateNGrams creates n-grams from input text.
-func GenerateNGrams(text string, n int) []string {
-	words := strings.Fields(text)
-	var ngrams []string
-	for i := 0; i <= len(words)-n; i++ {
-		ngrams = append(ngrams, strings.Join(words[i:i+n], " "))
-	}
-	return ngrams
-}
 
 // writeToFile writes data to a file at the specified path
 func writeToFile(filePath string, data string) error {
@@ -63,7 +55,7 @@ func writeToFile(filePath string, data string) error {
 }
 
 // writeJSON writes any value as pretty JSON to file
-func writeJSON(filePath string, v interface{}) error {
+func WriteJSON(filePath string, v interface{}) error {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal json: %v", err)
@@ -71,8 +63,8 @@ func writeJSON(filePath string, v interface{}) error {
 	return writeToFile(filePath, string(b))
 }
 
-// writeSimpleHTML writes a minimal HTML page with provided title and body HTML
-func writeSimpleHTML(filePath, title, bodyHTML string) error {
+// WriteSimpleHTML writes a minimal HTML page with provided title and body HTML
+func WriteSimpleHTML(filePath, title, bodyHTML string) error {
 	html := "" +
 		"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>" +
 		title +
@@ -87,10 +79,10 @@ func htmlEscape(s string) string {
 	return r.Replace(s)
 }
 
-// writeTextAsHTML wraps plain text in a <pre> and writes as HTML
-func writeTextAsHTML(filePath, title, text string) error {
+// WriteTextAsHTML wraps plain text in a <pre> and writes as HTML
+func WriteTextAsHTML(filePath, title, text string) error {
 	body := "<pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:monospace\">" + htmlEscape(text) + "</pre>"
-	return writeSimpleHTML(filePath, title, body)
+	return WriteSimpleHTML(filePath, title, body)
 }
 
 // tokenPreview returns first N tokens of text joined by space
@@ -161,7 +153,7 @@ func WriteResultsHTML(filePath, title string, groups []framework.CloneGroup, set
 	}
 	sb.WriteString("</tbody></table>")
 
-	return writeSimpleHTML(filePath, title, sb.String())
+	return WriteSimpleHTML(filePath, title, sb.String())
 }
 
 // WritePygroupsHTML renders a simple groups table similar to clones2html.py output
@@ -196,7 +188,7 @@ func WritePygroupsHTML(targetPath string, groups []framework.CloneGroup, filenam
 		sb.WriteString(fmt.Sprintf("<tr><td>%d</td><td>%d</td><td>%d</td><td><tt>%s</tt></td></tr>", i+1, ntoks, occurs, esc.Replace(text)))
 	}
 	sb.WriteString("</tbody></table>")
-	return writeSimpleHTML(targetPath, "Clone groups", sb.String())
+	return WriteSimpleHTML(targetPath, "Clone groups", sb.String())
 }
 
 // WritePyVariativeElements renders a minimal interactive-like report placeholder
@@ -214,7 +206,7 @@ func WritePyVariativeElements(targetPath string, groups []framework.CloneGroup) 
 	}
 	// include client-side placeholder js for future interactivity
 	sb.WriteString("<script>console.log('pyvarelements simplified report loaded');</script>")
-	return writeSimpleHTML(targetPath, "Variative Elements", sb.String())
+	return WriteSimpleHTML(targetPath, "Variative Elements", sb.String())
 }
 
 // WriteDensityReports writes placeholder density visualizations
@@ -291,10 +283,10 @@ func WriteDensityReports(dir string, totalTokens int, groups []framework.CloneGr
 	tableSB.WriteString("</tbody></table>")
 	mapSB.WriteString("</div>")
 
-	if err := writeSimpleHTML(filepath.Join(dir, "densityreport.html"), "Density report", tableSB.String()); err != nil {
+	if err := WriteSimpleHTML(filepath.Join(dir, "densityreport.html"), "Density report", tableSB.String()); err != nil {
 		return err
 	}
-	if err := writeSimpleHTML(filepath.Join(dir, "densitymap.html"), "Density map", mapSB.String()); err != nil {
+	if err := WriteSimpleHTML(filepath.Join(dir, "densitymap.html"), "Density map", mapSB.String()); err != nil {
 		return err
 	}
 
@@ -323,7 +315,7 @@ func WriteDensityReports(dir string, totalTokens int, groups []framework.CloneGr
 		heatSB.WriteString(fmt.Sprintf("<span title=\"tokens %d-%d, avg=%.2f\" style=\"display:inline-block;height:24px;width:%.4f%%;background:rgba(255,0,0,%.3f)\"></span>", i, end, avg, widthPct, alpha))
 	}
 	heatSB.WriteString("</div>")
-	if err := writeSimpleHTML(filepath.Join(dir, "heatmap.html"), "Heatmap", heatSB.String()); err != nil {
+	if err := WriteSimpleHTML(filepath.Join(dir, "heatmap.html"), "Heatmap", heatSB.String()); err != nil {
 		return err
 	}
 	return nil
@@ -373,9 +365,9 @@ func AverageTokensInGroup(groups []framework.CloneGroup) float64 {
 }
 
 // readFileContent reads file content and handles different file types
-func readFileContent(filePath string) (string, error) {
+func ReadFileContent(filePath string) (string, error) {
 	fmt.Printf("Reading file content: %s\n", filePath)
-	converter := NewDocumentConverter()
+	converter := internal.NewDocumentConverter()
 	var tempFilePath string
 	var err error
 
@@ -403,7 +395,7 @@ func readFileContent(filePath string) (string, error) {
 	fmt.Printf("File extension: %s\n", ext)
 	if ext == ".xml" || ext == ".dbk" || ext == ".docbook" {
 		fmt.Printf("Processing as DocBook/XML file\n")
-		parser := NewDocBookParser()
+		parser := internal.NewDocBookParser()
 		segments, err := parser.ParseDocBook(strings.NewReader(string(content)))
 		if err != nil {
 			return "", fmt.Errorf("failed to parse DocBook: %v", err)
@@ -419,7 +411,7 @@ func readFileContent(filePath string) (string, error) {
 }
 
 // splitTextIntoParts splits text into parts (for example, by sentences).
-func splitTextIntoParts(text string) []string {
+func SplitTextIntoParts(text string) []string {
 	// Use regex to find punctuation marks.
 	re := regexp.MustCompile(`[.!?]`)
 	parts := re.Split(text, -1)
@@ -436,8 +428,8 @@ func splitTextIntoParts(text string) []string {
 }
 
 // validateFileFormat checks if the file format is supported
-func validateFileFormat(filePath string) error {
-	converter := NewDocumentConverter()
+func ValidateFileFormat(filePath string) error {
+	converter := internal.NewDocumentConverter()
 	ext := strings.ToLower(filepath.Ext(filePath))
 
 	fmt.Printf("Validating file format: %s (extension: %s)\n", filePath, ext)
