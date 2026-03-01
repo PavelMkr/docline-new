@@ -1,15 +1,16 @@
 package internal
 
 import (
-	"encoding/xml"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	rep "Docline/internal/report"
 )
 
 func TestNewDocBookParser(t *testing.T) {
-	parser := NewDocBookParser()
+	parser := rep.NewDocBookParser()
 
 	// check that all standard elements are present
 	expectedElements := []string{"para", "section", "chapter", "title", "simpara", "note", "warning", "important", "tip"}
@@ -21,7 +22,7 @@ func TestNewDocBookParser(t *testing.T) {
 }
 
 func TestDocBookParser_AddRemoveTextElement(t *testing.T) {
-	parser := NewDocBookParser()
+	parser := rep.NewDocBookParser()
 
 	// test adding a new element
 	newElement := "custom_element"
@@ -84,7 +85,7 @@ func TestDocBookParser_ParseDocBook(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parser := NewDocBookParser()
+			parser := rep.NewDocBookParser()
 			reader := strings.NewReader(tt.input)
 
 			segments, err := parser.ParseDocBook(reader)
@@ -115,45 +116,6 @@ func TestDocBookParser_ParseDocBook(t *testing.T) {
 	}
 }
 
-func TestDocBookParser_ExtractText(t *testing.T) {
-	parser := NewDocBookParser()
-
-	// create test DocBook structure
-	doc := &DocBookElement{
-		XMLName: xml.Name{Local: "book"},
-		Elements: []DocBookElement{
-			{
-				XMLName: xml.Name{Local: "para"},
-				Content: "Test content",
-			},
-			{
-				XMLName: xml.Name{Local: "section"},
-				Elements: []DocBookElement{
-					{
-						XMLName: xml.Name{Local: "para"},
-						Content: "Nested content",
-					},
-				},
-			},
-		},
-	}
-
-	var segments []string
-	parser.extractText(doc, &segments)
-
-	expected := []string{"Test content", "Nested content"}
-	if len(segments) != len(expected) {
-		t.Errorf("Expected %d segments, got %d", len(expected), len(segments))
-		return
-	}
-
-	for i, exp := range expected {
-		if segments[i] != exp {
-			t.Errorf("Segment %d: expected %q, got %q", i, exp, segments[i])
-		}
-	}
-}
-
 func TestDocBookParser_RealDocBookFile(t *testing.T) {
 	// path to DocBook in test folder
 	docbookFile := filepath.Join("test", "DocBook_Definitive_Guide.xml")
@@ -172,7 +134,7 @@ func TestDocBookParser_RealDocBookFile(t *testing.T) {
 	defer file.Close()
 
 	// create parser and parse file
-	parser := NewDocBookParser()
+	parser := rep.NewDocBookParser()
 	segments, err := parser.ParseDocBook(file)
 
 	if err != nil {
@@ -221,7 +183,7 @@ func TestDocBookParser_LinuxKernelDoc(t *testing.T) {
 	defer file.Close()
 
 	// create parser and parse file
-	parser := NewDocBookParser()
+	parser := rep.NewDocBookParser()
 	segments, err := parser.ParseDocBook(file)
 
 	if err != nil {
@@ -262,7 +224,7 @@ func TestDocBookParser_FullRealDocBookFile(t *testing.T) {
 	defer file.Close()
 
 	// create parser and parse file
-	parser := NewDocBookParser()
+	parser := rep.NewDocBookParser()
 	segments, err := parser.ParseDocBook(file)
 
 	if err != nil {

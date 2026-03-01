@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"Docline/framework"
+	"Docline/internal/framework"
 )
 
 // CustomCloneFinder demonstrates how to create a custom clone finder

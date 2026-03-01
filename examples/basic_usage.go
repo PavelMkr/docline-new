@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"Docline/framework"
+	alg "Docline/internal/algorithms"
+	rep "Docline/internal/report"
+	"Docline/internal/framework"
 )
 
 func main() {
@@ -51,15 +53,11 @@ func main() {
 func registerBuiltins(fw *framework.Framework) {
 	registry := fw.GetRegistry()
 
-	// Register tokenizer
-	registry.RegisterTextTokenizer(&framework.SpaceTokenizer{})
+	// Core framework utilities (tokenizer, similarity, filters)
+	_ = framework.RegisterBuiltInPlugins(registry)
 
-	// Register similarity calculator
-	registry.RegisterSimilarityCalculator(&framework.JaccardSimilarityCalculator{})
-
-	// Register filters
-	registry.RegisterFilter(&framework.StrictFilter{})
-
-	// Note: Clone finders, parsers, converters, and report generators
-	// would be registered here after refactoring existing code
+	// Built-in algorithms, document parser/converter and report generators.
+	_ = alg.RegisterCloneFinders(registry)
+	_ = rep.RegisterDocumentPlugins(registry)
+	_ = rep.RegisterReportGenerators(registry)
 }

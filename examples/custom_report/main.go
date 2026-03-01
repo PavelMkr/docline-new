@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"Docline/framework"
+	"Docline/internal/framework"
 )
 
 // MarkdownReportGenerator implements a custom report generator for Markdown format
