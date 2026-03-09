@@ -30,9 +30,9 @@ jobs:
 
       - name: go fmt (framework + internal + test)
         run: |
-          gofmt -w framework/*.go internal/*.go
+          gofmt -w internal/*.go
           gofmt -w ./*.go
-          gofmt -w test/*.go || true
+          gofmt -w tests/*.go || true
 
       - name: go vet
         run: |
@@ -57,7 +57,7 @@ jobs:
       - name: Run integration / pipeline tests
         run: |
           # Используем существующие интеграционные и e2e-тесты, если они есть
-          go test -v ./test/... || true
+          go test -v ./tests/... || true
           go test -v ./... -run 'Integration|Pipeline' || true
 
       # --- Полный прогон тестов как защита ---
