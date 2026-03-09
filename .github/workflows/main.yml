@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, framework ]
+  pull_request:
+    branches: [ main, framework ]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [ '1.23.x' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      # --- Базовая проверка кода ---
+
+      - name: go fmt (framework + internal + test)
+        run: |
+          gofmt -w framework/*.go internal/*.go
+          gofmt -w ./*.go
+          gofmt -w test/*.go || true
+
+      - name: go vet
+        run: |
+          go vet ./...
+
+      # --- Тесты по слоям архитектуры ---
+
+      - name: Run framework core tests
+        run: |
+          go test -v ./... -run 'TestFramework|TestCore' || true
+
+      - name: Run algorithms tests (automatic / heuristic / ngram / interactive)
+        run: |
+          go test -v ./internal/... || true
+
+      - name: Run report generation tests
+        run: |
+          if [ -d "reports" ]; then
+            go test -v ./reports/...
+          fi
+
+      - name: Run integration / pipeline tests
+        run: |
+          # Используем существующие интеграционные и e2e-тесты, если они есть
+          go test -v ./test/... || true
+          go test -v ./... -run 'Integration|Pipeline' || true
+
+      # --- Полный прогон тестов как защита ---
+
+      - name: Run all tests (safety net)
+        run: |
+          go test ./... -race -count=1
+
+      # --- Покрытие (артефакт) ---
+
+      - name: Test coverage (core + internal)
+        run: |
+          go test ./... -coverprofile=coverage.out
+        continue-on-error: true
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+        if: always()
