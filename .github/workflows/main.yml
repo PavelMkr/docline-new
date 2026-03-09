@@ -30,8 +30,9 @@ jobs:
 
       - name: go fmt (framework + internal + test)
         run: |
-          gofmt -w internal/*.go
-          gofmt -w ./*.go
+          gofmt -w internal/algorithms/*.go
+          gofmt -w internal/framework/*.go
+          gofmt -w internal/report/*.go
           gofmt -w tests/*.go || true
 
       - name: go vet
@@ -42,11 +43,11 @@ jobs:
 
       - name: Run framework core tests
         run: |
-          go test -v ./... -run 'TestFramework|TestCore' || true
+          go test -v ./internal/framework/... -run 'TestFramework|TestCore' || true
 
       - name: Run algorithms tests (automatic / heuristic / ngram / interactive)
         run: |
-          go test -v ./internal/... || true
+          go test -v ./internal/algorithms/... || true
 
       - name: Run report generation tests
         run: |
