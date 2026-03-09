@@ -1,3 +1,4 @@
 test/*
 modes/__pycache__
 results/*
+examples/*
