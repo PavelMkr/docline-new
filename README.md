@@ -1,6 +1,8 @@
 # Duplicate Finder Framework
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/PavelMkr/docline-new)
+![CI](https://github.com/PavelMkr/docline-new/actions/workflows/main.yml/badge.svg)
 
-**Documentation Refactoring Toolkit** — a clone-finding and documentation refactoring **framework** inside the DocLine project.  
+**Documentation Refactoring Toolkit** — a clone-finding and documentation refactoring **framework** inside the DocLine project.
 
 ### How to work
 
@@ -40,7 +42,7 @@ High-level scheme:
 - Plain Text (.txt)
 - HTML (.html, .htm)
 
-*The actual "to DocBook" conversion is implemented using `pandoc` inside `internal/report.DocumentConverter`.  
+*The actual "to DocBook" conversion is implemented using `pandoc` inside `internal/report.DocumentConverter`.
 For simple text/DocBook files, you can work without `pandoc` (the framework will simply read the content as text or parse the DocBook directly).*
 
 ## Quickstart
@@ -86,6 +88,5 @@ err = fw.GenerateReport(result, "html", "./results/report.html")
 ## Dependencies
 
 - Go **1.23+**
-- Optional: **Pandoc** is only needed for converting input documents to DocBook (via `DocumentConverter`).  
+- Optional: **Pandoc** is only needed for converting input documents to DocBook (via `DocumentConverter`).
   The tests in `tests/converter_test.go` and the functionality of `PandocConverterAdapter` assume its presence, but basic analysis of DocBook/XML and plain text works without it.
-
