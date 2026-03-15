@@ -1,27 +1,27 @@
 package internal
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 )
 
 // GenerateNGrams creates n-grams from input text.
 func GenerateNGrams(text string, n int) []string {
-    words := strings.Fields(text)
-    var ngrams []string
-    for i := 0; i <= len(words)-n; i++ {
-        ngrams = append(ngrams, strings.Join(words[i:i+n], " "))
-    }
-    return ngrams
+	words := strings.Fields(text)
+	var ngrams []string
+	for i := 0; i <= len(words)-n; i++ {
+		ngrams = append(ngrams, strings.Join(words[i:i+n], " "))
+	}
+	return ngrams
 }
 
 // NgramDuplicate
 type NgramDuplicateFinderData struct {
-    MinCloneSlider int    `json:"min_clone_slider"`
-    MaxEditSlider  int    `json:"max_edit_slider"`
-    MaxFuzzySlider int    `json:"max_fuzzy_slider"`
-    SourceLanguage string `json:"source_language"`
-    FilePath       string `json:"file_path"`
+	MinCloneSlider int    `json:"min_clone_slider"`
+	MaxEditSlider  int    `json:"max_edit_slider"`
+	MaxFuzzySlider int    `json:"max_fuzzy_slider"`
+	SourceLanguage string `json:"source_language"`
+	FilePath       string `json:"file_path"`
 }
 
 func CalculateNGramSimilarity(map1, map2 map[string]int) float64 {
@@ -51,12 +51,12 @@ func CalculateNGramSimilarity(map1, map2 map[string]int) float64 {
 
 // BuildNGramMap creates a map of n-grams for text.
 func BuildNGramMap(text string, n int) map[string]int {
-    ngrams := GenerateNGrams(text, n)
-    ngramMap := make(map[string]int)
-    for _, ngram := range ngrams {
-        ngramMap[ngram]++
-    }
-    return ngramMap
+	ngrams := GenerateNGrams(text, n)
+	ngramMap := make(map[string]int)
+	for _, ngram := range ngrams {
+		ngramMap[ngram]++
+	}
+	return ngramMap
 }
 
 func FindDuplicatesByNGram(data NgramDuplicateFinderData, texts []string) map[string][]string {

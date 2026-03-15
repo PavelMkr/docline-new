@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	alg "Docline/internal/algorithms"
-	rep "Docline/internal/report"
 	"Docline/internal/framework"
+	rep "Docline/internal/report"
 )
 
 // dummyFinder is a minimal CloneFinder implementation used in registry tests.
@@ -131,4 +131,3 @@ func TestFramework_GenerateReport(t *testing.T) {
 		t.Fatalf("expected report file to exist, got: %v", err)
 	}
 }
-

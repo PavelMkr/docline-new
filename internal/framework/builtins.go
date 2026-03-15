@@ -16,4 +16,3 @@ func RegisterBuiltInPlugins(reg *PluginRegistry) error {
 	}
 	return nil
 }
-

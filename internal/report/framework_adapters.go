@@ -96,4 +96,3 @@ func RegisterDocumentPlugins(reg *framework.PluginRegistry) error {
 	}
 	return nil
 }
-

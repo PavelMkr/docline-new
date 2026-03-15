@@ -116,6 +116,3 @@ func (s *StrictFilter) Filter(groups []CloneGroup, config FilterConfig) []CloneG
 func hasOverlap(a, b TextFragment) bool {
 	return a.StartPos <= b.EndPos && b.StartPos <= a.EndPos
 }
-
-
-

@@ -78,10 +78,10 @@ func (j *JSONReportGenerator) Generate(groups []framework.CloneGroup, cfg framew
 	}
 
 	payload := struct {
-		Title      string                      `json:"title"`
-		SourceFile string                      `json:"source_file"`
-		Settings   map[string]interface{}      `json:"settings,omitempty"`
-		Groups     []framework.CloneGroup      `json:"groups"`
+		Title      string                       `json:"title"`
+		SourceFile string                       `json:"source_file"`
+		Settings   map[string]interface{}       `json:"settings,omitempty"`
+		Groups     []framework.CloneGroup       `json:"groups"`
 		Stats      framework.AnalysisStatistics `json:"stats,omitempty"`
 	}{
 		Title:      cfg.Title,
@@ -182,4 +182,3 @@ func RegisterReportGenerators(reg *framework.PluginRegistry) error {
 	}
 	return nil
 }
-
