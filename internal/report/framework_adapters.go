@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"Docline/internal/framework"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 // DocBookParserAdapter adapts DocBookParser to the framework.DocumentParser interface.

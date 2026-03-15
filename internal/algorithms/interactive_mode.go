@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"Docline/internal/framework"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 // InteractiveModeSettings represents the settings for interactive mode

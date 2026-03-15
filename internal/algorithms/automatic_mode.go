@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"Docline/internal/framework"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 // AutomaticModeSettings represents the settings for automatic mode

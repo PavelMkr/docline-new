@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	alg "Docline/internal/algorithms"
-	rep "Docline/internal/report"
-	"Docline/internal/framework"
+	alg "github.com/PavelMkr/docline-new/internal/algorithms"
+	rep "github.com/PavelMkr/docline-new/internal/report"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 func main() {
@@ -17,12 +17,12 @@ func main() {
 		DefaultTokenizer:     "space",
 		DefaultCloneFinder:   "automatic",
 	}
-	
+
 	fw := framework.NewFramework(config)
-	
+
 	// Register built-in components
 	registerBuiltins(fw)
-	
+
 	// Analyze a document
 	result, err := fw.AnalyzeDocument(
 		"example.xml",
@@ -33,20 +33,20 @@ func main() {
 			SimilarityThreshold: 0.9,
 		},
 	)
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	fmt.Printf("Found %d clone groups\n", result.Statistics.TotalGroups)
 	fmt.Printf("Total fragments: %d\n", result.Statistics.TotalFragments)
-	
+
 	// Generate report
 	err = fw.GenerateReport(result, "html", "./results/report.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	fmt.Println("Analysis complete!")
 }
 
@@ -61,4 +61,3 @@ func registerBuiltins(fw *framework.Framework) {
 	_ = rep.RegisterDocumentPlugins(registry)
 	_ = rep.RegisterReportGenerators(registry)
 }
-

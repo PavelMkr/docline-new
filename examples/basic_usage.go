@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	alg "Docline/internal/algorithms"
-	rep "Docline/internal/report"
-	"Docline/internal/framework"
+	alg "github.com/PavelMkr/docline-new/internal/algorithms"
+	rep "github.com/PavelMkr/docline-new/internal/report"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 func main() {

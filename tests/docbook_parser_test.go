@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	rep "Docline/internal/report"
+	rep "github.com/PavelMkr/docline-new/internal/report"
 )
 
 func TestNewDocBookParser(t *testing.T) {

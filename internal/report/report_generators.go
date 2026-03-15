@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"Docline/internal/framework"
+	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 // HTMLReportGenerator implements framework.ReportGenerator for HTML output.

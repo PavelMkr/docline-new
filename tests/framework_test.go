@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	alg "Docline/internal/algorithms"
-	"Docline/internal/framework"
-	rep "Docline/internal/report"
+	alg "github.com/PavelMkr/docline-new/internal/algorithms"
+	"github.com/PavelMkr/docline-new/internal/framework"
+	rep "github.com/PavelMkr/docline-new/internal/report"
 )
 
 // dummyFinder is a minimal CloneFinder implementation used in registry tests.
