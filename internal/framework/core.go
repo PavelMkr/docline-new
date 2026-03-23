@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Framework is the main entry point for the DocLine framework
@@ -46,39 +47,62 @@ func (f *Framework) GetRegistry() *PluginRegistry {
 
 // AnalyzeDocument performs complete analysis of a document
 func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderConfig CloneFinderConfig) (*AnalysisResult, error) {
-	// Read and parse document
-	content, err := f.readDocument(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read document: %v", err)
-	}
+    // Read and parse document (existing behavior)
+    content, err := f.readDocument(filePath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read document: %v", err)
+    }
 
-	// Get clone finder
-	finder, err := f.registry.GetCloneFinder(finderName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get clone finder: %v", err)
-	}
+    // Heuristic mode: enforce .reformatted as the analysis source
+    if finderName == "heuristic" {
+        normalized := normalizeReformattedContent(content)
 
-	// Find clones
-	groups, err := finder.FindClones(content, finderConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find clones: %v", err)
-	}
+        reformattedPath := filePath + ".reformatted"
+        if err := os.WriteFile(reformattedPath, []byte(normalized), 0o644); err != nil {
+            return nil, fmt.Errorf("write reformatted file: %w", err)
+        }
 
-	// Calculate statistics
-	stats := f.calculateStatistics(groups)
+        b, err := os.ReadFile(reformattedPath)
+        if err != nil {
+            return nil, fmt.Errorf("read reformatted file: %w", err)
+        }
+        content = string(b)
 
-	// Build result
-	result := &AnalysisResult{
-		Groups:     groups,
-		Statistics: stats,
-		Config:     finderConfig,
-		Metadata: map[string]interface{}{
-			"source_file": filePath,
-			"finder":      finderName,
-		},
-	}
+        if finderConfig.CustomParams == nil {
+            finderConfig.CustomParams = map[string]interface{}{}
+        }
+        finderConfig.CustomParams["reformatted_file"] = reformattedPath
+        finderConfig.CustomParams["source_file"] = filePath
+    }
 
-	return result, nil
+    finder, err := f.registry.GetCloneFinder(finderName)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get clone finder: %v", err)
+    }
+
+    groups, err := finder.FindClones(content, finderConfig)
+    if err != nil {
+        return nil, fmt.Errorf("failed to find clones: %v", err)
+    }
+
+    stats := f.calculateStatistics(groups)
+
+    result := &AnalysisResult{
+        Groups:     groups,
+        Statistics: stats,
+        Config:     finderConfig,
+        Metadata: map[string]interface{}{
+            "source_file": filePath,
+            "finder":      finderName,
+        },
+    }
+
+    // (optional) expose reformatted path on result metadata too
+    if finderName == "heuristic" {
+        result.Metadata["reformatted_file"] = filePath + ".reformatted"
+    }
+
+    return result, nil
 }
 
 // GenerateReport generates a report from analysis results
@@ -242,4 +266,18 @@ func ReadDocument(f *Framework, filePath string) (io.Reader, error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+func normalizeReformattedContent(content string) string {
+    // Normalize line endings
+    content = strings.ReplaceAll(content, "\r\n", "\n")
+    content = strings.ReplaceAll(content, "\r", "\n")
+
+    // Unify tabs
+    content = strings.ReplaceAll(content, "\t", "    ")
+
+    // Make sure string is valid UTF-8 (does not “detect encoding”, but cleans invalid bytes)
+    content = strings.ToValidUTF8(content, "")
+
+    return content
 }

@@ -94,5 +94,8 @@ func RegisterDocumentPlugins(reg *framework.PluginRegistry) error {
 	if err := reg.RegisterDocumentConverter(NewPandocConverterAdapter()); err != nil {
 		return fmt.Errorf("register pandoc converter: %w", err)
 	}
+	if err := reg.RegisterDocumentParser(&DRLParserAdapter{}); err != nil {
+        return fmt.Errorf("register drl parser: %w", err)
+    }
 	return nil
 }
