@@ -41,7 +41,7 @@ func TestHeuristic_CreatesReformattedFile(t *testing.T) {
 		t.Fatalf("RegisterCloneFinders: %v", err)
 	}
 
-	result, err := fw.AnalyzeDocumentWithConfig(srcPath, "heuristic", framework.CloneFinderConfig{
+	result, err := fw.AnalyzeDocument(srcPath, "heuristic", framework.CloneFinderConfig{
 		MinCloneLength: 2,
 		MinGroupPower:  1,
 		CustomParams: map[string]interface{}{
