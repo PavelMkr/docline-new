@@ -105,6 +105,11 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
     return result, nil
 }
 
+// AnalyzeDocumentWithConfig is an alias for AnalyzeDocument with explicit config
+func (f *Framework) AnalyzeDocumentWithConfig(filePath string, finderName string, finderConfig CloneFinderConfig) (*AnalysisResult, error) {
+    return f.AnalyzeDocument(filePath, finderName, finderConfig)
+}
+
 // GenerateReport generates a report from analysis results
 func (f *Framework) GenerateReport(result *AnalysisResult, format string, outputPath string) error {
 	generator, err := f.registry.GetReportGenerator(format)
