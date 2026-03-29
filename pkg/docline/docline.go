@@ -14,6 +14,14 @@ type Config struct {
     DefaultCloneFinder  string
 }
 
+type CloneFinderConfig struct {
+    MinCloneLength      int
+    MaxCloneLength      int
+    MinGroupPower       int
+    SimilarityThreshold float64
+    CustomParams        map[string]interface{}
+}
+
 // Docline - main struct for the Docline framework
 type Docline struct {
     fw *internalFramework.Framework
