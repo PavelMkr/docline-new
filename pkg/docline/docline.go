@@ -49,6 +49,17 @@ func (d *Docline) AnalyzeDocument(filePath, finderType string, minCloneLength, m
     return d.fw.AnalyzeDocument(filePath, finderType, cfg)
 }
 
+func (d *Docline) AnalyzeDocumentWithConfig(filePath, finderType string, cfg CloneFinderConfig) (*internalFramework.AnalysisResult, error) {
+    internalCfg := internalFramework.CloneFinderConfig{
+        MinCloneLength:      cfg.MinCloneLength,
+        MaxCloneLength       cfg.MaxCloneLength
+	    MinGroupPower        cfg.MinGroupPower
+	    SimilarityThreshold  cfg.SimilarityThreshold
+	    CustomParams         cfg.CustomParams,
+    }
+    return d.fw.AnalyzeDocument(filePath, finderType, internalCfg)
+}
+
 // GenerateReport generates a report based on the analysis result
 func (d *Docline) GenerateReport(result *internalFramework.AnalysisResult, format, outputPath string) error {
     return d.fw.GenerateReport(result, format, outputPath)

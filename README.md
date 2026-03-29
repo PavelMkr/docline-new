@@ -8,7 +8,7 @@
 
 - Create an instance of `framework.Framework`.
 - Register the required plugins (algorithms, document parser/converter, report generators, tokenizers, and filters).
-- Call `AnalyzeDocument` and then `GenerateReport` in the desired format.
+- Call `AnalyzeDocument` (or `AnalyzeDocumentWithConfig` for `heuristic`)  and then `GenerateReport` in the desired format.
 
 ## Architecture
 
