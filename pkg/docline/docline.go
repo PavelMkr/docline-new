@@ -60,10 +60,10 @@ func (d *Docline) AnalyzeDocument(filePath, finderType string, minCloneLength, m
 func (d *Docline) AnalyzeDocumentWithConfig(filePath, finderType string, cfg CloneFinderConfig) (*internalFramework.AnalysisResult, error) {
     internalCfg := internalFramework.CloneFinderConfig{
         MinCloneLength:      cfg.MinCloneLength,
-        MaxCloneLength       cfg.MaxCloneLength
-	    MinGroupPower        cfg.MinGroupPower
-	    SimilarityThreshold  cfg.SimilarityThreshold
-	    CustomParams         cfg.CustomParams,
+        MaxCloneLength:       cfg.MaxCloneLength,
+	    MinGroupPower:        cfg.MinGroupPower,
+	    SimilarityThreshold:  cfg.SimilarityThreshold,
+	    CustomParams:         cfg.CustomParams,
     }
     return d.fw.AnalyzeDocument(filePath, finderType, internalCfg)
 }
