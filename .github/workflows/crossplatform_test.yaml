@@ -1,0 +1,30 @@
+name: Cross-Platform Testing
+
+on: [push]
+
+env:
+  PROJECT_NAME: "text_duplicate_finder"
+
+jobs:
+  cross_platform_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-2022]
+        go-version: [1.18, 1.20, 1.21]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        target: ${{ matrix.os }}
+
+    - name: Build and test
+      run: |
+        GOOS=$(echo ${{ matrix.os }} | sed -e 's/ubuntu-linux/Linux/' -e 's/macos/MacOS/' -e 's/windows/Windows/')
+        GOARCH=amd64
+        go test -v -race ./...

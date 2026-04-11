@@ -2,7 +2,7 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/PavelMkr/docline-new)
 ![CI](https://github.com/PavelMkr/docline-new/actions/workflows/main.yml/badge.svg)
 
-**Documentation Refactoring Toolkit** — a clone-finding and documentation refactoring **framework** inside the DocLine project.
+**Duplicate Finder Framework** — a clone-finding and documentation refactoring **framework** inside the DocLine project.
 
 ### How to work
 
