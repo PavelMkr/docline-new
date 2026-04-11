@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        go get github.com/PavelMkr/docline-new/...
+        go get github.com/PavelMkr/docline-new/
         go mod tidy
 
     - name: Build and test
