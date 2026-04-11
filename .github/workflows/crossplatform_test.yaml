@@ -1,6 +1,8 @@
 name: Cross-Platform Testing
 
-on: [push]
+on:
+  push:
+    branches: [main]
 
 env:
   PROJECT_NAME: "text_duplicate_finder"
@@ -22,6 +24,12 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
         target: ${{ matrix.os }}
+
+    - name: Initialize Go modules
+      run: |
+        if [ ! -f go.mod ]; then
+          echo "module github.com/PavelMkr/docline-new" > go.mod
+        fi
 
     - name: Build and test
       run: |
