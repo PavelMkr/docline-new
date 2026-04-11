@@ -31,6 +31,11 @@ jobs:
           echo "module github.com/PavelMkr/docline-new" > go.mod
         fi
 
+    - name: Install dependencies
+      run: |
+        go get github.com/PavelMkr/docline-new/...
+        go mod tidy
+
     - name: Build and test
       run: |
         GOOS=$(echo ${{ matrix.os }} | sed -e 's/ubuntu-linux/Linux/' -e 's/macos/MacOS/' -e 's/windows/Windows/')
