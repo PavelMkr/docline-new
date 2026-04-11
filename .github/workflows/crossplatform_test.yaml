@@ -31,10 +31,10 @@ jobs:
           echo "module github.com/PavelMkr/docline-new" > go.mod
         fi
 
-    - name: Install dependencies
+    - name: Get dependencies
       run: |
-        go get github.com/PavelMkr/docline-new/
         go mod tidy
+        go mod download
 
     - name: Build and test
       run: |
