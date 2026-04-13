@@ -33,7 +33,7 @@ jobs:
           gofmt -w internal/algorithms/*.go
           gofmt -w internal/framework/*.go
           gofmt -w internal/report/*.go
-          gofmt -w tests/*.go || true
+          gofmt -w tests/*.go 
 
       - name: go vet
         run: |
@@ -43,11 +43,11 @@ jobs:
 
       - name: Run framework core tests
         run: |
-          go test -v ./internal/framework/... -run 'TestFramework|TestCore' || true
+          go test -v ./internal/framework/... -run 'TestFramework|TestCore'
 
       - name: Run algorithms tests (automatic / heuristic / ngram / interactive)
         run: |
-          go test -v ./internal/algorithms/... || true
+          go test -v ./internal/algorithms/...
 
       - name: Run report generation tests
         run: |
@@ -58,8 +58,8 @@ jobs:
       - name: Run integration / pipeline tests
         run: |
           # Используем существующие интеграционные и e2e-тесты, если они есть
-          go test -v ./tests/... || true
-          go test -v ./... -run 'Integration|Pipeline' || true
+          go test -v ./tests/...
+          go test -v ./... -run 'Integration|Pipeline'
 
       # --- Полный прогон тестов как защита ---
 
