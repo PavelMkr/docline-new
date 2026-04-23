@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 // Framework is the main entry point for the DocLine framework
@@ -85,6 +86,9 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
         return nil, fmt.Errorf("failed to find clones: %v", err)
     }
 
+    annotateFragmentsWithLineNumbers(content, groups)
+    totalTokens := countFieldsTokens(content)
+
     stats := f.calculateStatistics(groups)
 
     result := &AnalysisResult{
@@ -94,6 +98,7 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
         Metadata: map[string]interface{}{
             "source_file": filePath,
             "finder":      finderName,
+            "total_tokens": totalTokens,
         },
     }
 
@@ -103,6 +108,74 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
     }
 
     return result, nil
+}
+
+func countFieldsTokens(s string) int {
+	return len(strings.Fields(s))
+}
+
+// annotateFragmentsWithLineNumbers adds 1-based source line numbers for each fragment.
+// The line numbers are computed against the analyzed text (post parsing/conversion).
+func annotateFragmentsWithLineNumbers(text string, groups []CloneGroup) {
+	maxEnd := 0
+	for _, g := range groups {
+		for _, fr := range g.Fragments {
+			if fr.EndPos > maxEnd {
+				maxEnd = fr.EndPos
+			}
+		}
+	}
+	if maxEnd <= 0 {
+		return
+	}
+
+	// tokenLines[i] = 1-based line number where token i starts
+	tokenLines := make([]int, maxEnd)
+	line := 1
+	inToken := false
+	tokenIdx := 0
+
+	for _, r := range text {
+		if r == '\n' {
+			line++
+		}
+
+		if unicode.IsSpace(r) {
+			inToken = false
+			continue
+		}
+
+		if !inToken {
+			if tokenIdx >= len(tokenLines) {
+				break
+			}
+			tokenLines[tokenIdx] = line
+			tokenIdx++
+			inToken = true
+		}
+	}
+
+	for gi := range groups {
+		for fi := range groups[gi].Fragments {
+			fr := &groups[gi].Fragments[fi]
+			if fr.Metadata == nil {
+				fr.Metadata = map[string]interface{}{}
+			}
+			if fr.StartPos >= 0 && fr.StartPos < len(tokenLines) && tokenLines[fr.StartPos] > 0 {
+				fr.Metadata["source_line_start"] = tokenLines[fr.StartPos]
+			}
+			endTok := fr.EndPos - 1
+			if endTok < 0 {
+				endTok = 0
+			}
+			if endTok >= len(tokenLines) {
+				endTok = len(tokenLines) - 1
+			}
+			if len(tokenLines) > 0 && endTok >= 0 && endTok < len(tokenLines) && tokenLines[endTok] > 0 {
+				fr.Metadata["source_line_end"] = tokenLines[endTok]
+			}
+		}
+	}
 }
 
 // AnalyzeDocumentWithConfig is an alias for AnalyzeDocument with explicit config
@@ -117,10 +190,19 @@ func (f *Framework) GenerateReport(result *AnalysisResult, format string, output
 		return fmt.Errorf("failed to get report generator: %v", err)
 	}
 
+	// Make a shallow copy of metadata so report generators can enrich settings
+	// without mutating the analysis result.
+	settings := map[string]interface{}{}
+	for k, v := range result.Metadata {
+		settings[k] = v
+	}
+	// Expose statistics for generators (e.g. JSON payload "stats").
+	settings["stats"] = result.Statistics
+
 	reportConfig := ReportConfig{
 		Title:      "Clone Analysis Report",
 		SourceFile: result.Metadata["source_file"].(string),
-		Settings:   result.Metadata,
+		Settings:   settings,
 		OutputDir:  filepath.Dir(outputPath),
 	}
 
