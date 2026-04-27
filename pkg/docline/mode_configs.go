@@ -76,7 +76,7 @@ func (c NgramConfig) toInternal(filePath string) internalFramework.CloneFinderCo
 	cp := map[string]interface{}{
 		"max_edit":        c.MaxEdit,
 		"max_fuzzy":       c.MaxFuzzy,
-		"source_language": c.SourceLanguage,
+		// "source_language": c.SourceLanguage,
 		"file_path":       filePath,
 	}
 	if len(cp) == 0 {

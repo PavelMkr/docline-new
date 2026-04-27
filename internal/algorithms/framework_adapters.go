@@ -97,7 +97,7 @@ func (a *NGramAdapter) FindClones(text string, cfg framework.CloneFinderConfig) 
 		MinCloneSlider: minClone,
 		MaxEditSlider:  getInt(cfg.CustomParams, "max_edit", 1),
 		MaxFuzzySlider: getInt(cfg.CustomParams, "max_fuzzy", 1),
-		SourceLanguage: getString(cfg.CustomParams, "source_language", "english"),
+		// SourceLanguage: getString(cfg.CustomParams, "source_language", "english"),
 		FilePath:       getString(cfg.CustomParams, "file_path", ""),
 	}
 
