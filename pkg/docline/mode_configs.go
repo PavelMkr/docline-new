@@ -13,7 +13,7 @@ type AutomaticConfig struct {
 
 func (c AutomaticConfig) FinderType() string { return "automatic" }
 
-func (c AutomaticConfig) toInternal() internalFramework.CloneFinderConfig {
+func (c AutomaticConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{}
 	if c.ConvertToDRL != nil {
 		cp["convert_to_drl"] = *c.ConvertToDRL
@@ -44,7 +44,7 @@ type InteractiveConfig struct {
 
 func (c InteractiveConfig) FinderType() string { return "interactive" }
 
-func (c InteractiveConfig) toInternal() internalFramework.CloneFinderConfig {
+func (c InteractiveConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{
 		"max_clone_length": c.MaxCloneLength,
 	}
@@ -68,17 +68,16 @@ type NgramConfig struct {
 	MaxEdit        int
 	MaxFuzzy       int
 	SourceLanguage string
-	FilePath       string
 }
 
 func (c NgramConfig) FinderType() string { return "ngram" }
 
-func (c NgramConfig) toInternal() internalFramework.CloneFinderConfig {
+func (c NgramConfig) toInternal(filePath string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{
 		"max_edit":        c.MaxEdit,
 		"max_fuzzy":       c.MaxFuzzy,
 		"source_language": c.SourceLanguage,
-		"file_path":       c.FilePath,
+		"file_path":       filePath,
 	}
 	if len(cp) == 0 {
 		cp = nil
@@ -99,7 +98,7 @@ type HeuristicConfig struct {
 
 func (c HeuristicConfig) FinderType() string { return "heuristic" }
 
-func (c HeuristicConfig) toInternal() internalFramework.CloneFinderConfig {
+func (c HeuristicConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{
 		"extension_point_checkbox": c.ExtensionPointCheckbox,
 		"file_path":                c.FilePath,

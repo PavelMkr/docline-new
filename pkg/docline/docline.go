@@ -5,7 +5,7 @@ import (
 	internalFramework "github.com/PavelMkr/docline-new/internal/framework"
 	internalReport "github.com/PavelMkr/docline-new/internal/report"
 
-    "fmt"
+	"fmt"
 )
 
 // Config - public configuration struct for initializing the Docline framework
@@ -31,7 +31,7 @@ type FinderModeConfig interface {
 	// FinderType returns the finder identifier used by the framework registry
 	// (built-in: "automatic", "interactive", "heuristic", "ngram").
 	FinderType() string
-	toInternal() internalFramework.CloneFinderConfig
+	toInternal(filePath string) internalFramework.CloneFinderConfig
 }
 
 // Docline - main struct for the Docline framework
@@ -73,7 +73,7 @@ func (d *Docline) AnalyzeDocument(filePath, finderType string, cfg FinderModeCon
 		return nil, fmt.Errorf("finderType %q does not match config type %q", finderType, cfg.FinderType())
 	}
 
-	return d.fw.AnalyzeDocument(filePath, finderType, cfg.toInternal())
+	return d.fw.AnalyzeDocument(filePath, finderType, cfg.toInternal(filePath))
 }
 
 func (d *Docline) AnalyzeDocumentWithConfig(filePath, finderType string, cfg CloneFinderConfig) (*internalFramework.AnalysisResult, error) {
@@ -89,5 +89,5 @@ func (d *Docline) AnalyzeDocumentWithConfig(filePath, finderType string, cfg Clo
 
 // GenerateReport generates a report based on the analysis result
 func (d *Docline) GenerateReport(result *internalFramework.AnalysisResult, format, outputPath string) error {
-    return d.fw.GenerateReport(result, format, outputPath)
+	return d.fw.GenerateReport(result, format, outputPath)
 }
