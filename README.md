@@ -6,14 +6,16 @@
 
 ### How to work
 
-- Create an instance of `framework.Framework`.
-- Register the required plugins (algorithms, document parser/converter, report generators, tokenizers, and filters).
-- Call `AnalyzeDocument` (or `AnalyzeDocumentWithConfig` for `heuristic`)  and then `GenerateReport` in the desired format.
+- If you want the **public API**: create `docline.Docline` and call `AnalyzeDocument`, then `GenerateReport`.
+- If you want the **low-level framework API**: create `framework.Framework`, register plugins manually, call `AnalyzeDocument`, then `GenerateReport`.
 
 ## Architecture
 
 High-level scheme:
 
+- **Public API** (`pkg/docline`):
+  - `Docline`, `Config` (`docline.go`)
+  - Built-in finder configs per mode (`mode_configs.go`): `AutomaticConfig`, `InteractiveConfig`, `HeuristicConfig`, `NgramConfig`
 - **Framework core** (`internal/framework`):
   - `Framework`, `Config` (`core.go`)
   - `PluginRegistry` (`registry.go`)
@@ -47,7 +49,45 @@ For simple text/DocBook files, you can work without `pandoc` (the framework will
 
 ## Quickstart
 
-An example of usage can be found in `examples/basic_usage.go`. The schema is as follows:
+An example of usage can be found in `examples/basic_usage.go`.
+
+### Public API (`pkg/docline`)
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/PavelMkr/docline-new/pkg/docline"
+)
+
+func main() {
+    d := docline.New(&docline.Config{
+        ResultsDirectory:    "./results",
+        DefaultReportFormat: "html",
+        DefaultTokenizer:    "space",
+        DefaultCloneFinder:  "automatic",
+    })
+
+    // Type-safe finder config for the selected mode.
+    result, err := d.AnalyzeDocument("example.xml", "automatic", docline.AutomaticConfig{
+        MinCloneLength: 20,
+        MinGroupPower:  2,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if err := d.GenerateReport(result, "html", "./results/report.html"); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+### Low-level API (`internal/framework`)
+
+If you need fine-grained control (custom registries/plugins), use the framework directly:
 
 ```go
 cfg := &framework.Config{
