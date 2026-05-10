@@ -120,7 +120,7 @@ metadata:
 		t.Fatalf("RegisterCloneFinders: %v", err)
 	}
 
-	finders := []string{"automatic", "interactive", "ngram"}
+	finders := []string{"automatic", "heuristic", "ngram"}
 	for _, finder := range finders {
 		result, err := fw.AnalyzeDocument(docPath, finder, framework.CloneFinderConfig{
 			MinCloneLength: 2,

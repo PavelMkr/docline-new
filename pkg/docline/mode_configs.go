@@ -35,31 +35,31 @@ func (c AutomaticConfig) toInternal(_ string) internalFramework.CloneFinderConfi
 }
 
 // Type-safe configuration for the "interactive" finder.
-type InteractiveConfig struct {
-	MinCloneLength int
-	MaxCloneLength int
-	MinGroupPower  int
-	UseArchetype   *bool
-}
-
-func (c InteractiveConfig) FinderType() string { return "interactive" }
-
-func (c InteractiveConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
-	cp := map[string]interface{}{
-		"max_clone_length": c.MaxCloneLength,
-	}
-	if c.UseArchetype != nil {
-		cp["use_archetype"] = *c.UseArchetype
-	}
-	if len(cp) == 0 {
-		cp = nil
-	}
-	return internalFramework.CloneFinderConfig{
-		MinCloneLength: c.MinCloneLength,
-		MinGroupPower:  c.MinGroupPower,
-		CustomParams:   cp,
-	}
-}
+// type InteractiveConfig struct {
+// 	MinCloneLength int
+// 	MaxCloneLength int
+// 	MinGroupPower  int
+// 	UseArchetype   *bool
+// }
+//
+// func (c InteractiveConfig) FinderType() string { return "interactive" }
+//
+// func (c InteractiveConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
+// 	cp := map[string]interface{}{
+// 		"max_clone_length": c.MaxCloneLength,
+// 	}
+// 	if c.UseArchetype != nil {
+// 		cp["use_archetype"] = *c.UseArchetype
+// 	}
+// 	if len(cp) == 0 {
+// 		cp = nil
+// 	}
+// 	return internalFramework.CloneFinderConfig{
+// 		MinCloneLength: c.MinCloneLength,
+// 		MinGroupPower:  c.MinGroupPower,
+// 		CustomParams:   cp,
+// 	}
+// }
 
 // Type-safe configuration for the "ngram" finder.
 type NgramConfig struct {
@@ -90,27 +90,27 @@ func (c NgramConfig) toInternal(filePath string) internalFramework.CloneFinderCo
 }
 
 // Type-safe configuration for the "heuristic" finder.
-// type HeuristicConfig struct {
-// 	MinCloneLength         int
-// 	ExtensionPointCheckbox bool
-// 	FilePath               string
-// }
+type HeuristicConfig struct {
+	MinCloneLength      int
+	MinGroupPower       int
+	SimilarityThreshold float64
+}
 
-// func (c HeuristicConfig) FinderType() string { return "heuristic" }
+func (c HeuristicConfig) FinderType() string { return "heuristic" }
 
-// func (c HeuristicConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
-// 	cp := map[string]interface{}{
-// 		"extension_point_checkbox": c.ExtensionPointCheckbox,
-// 		"file_path":                c.FilePath,
-// 	}
-// 	if len(cp) == 0 {
-// 		cp = nil
-// 	}
-// 	return internalFramework.CloneFinderConfig{
-// 		MinCloneLength: c.MinCloneLength,
-// 		CustomParams:   cp,
-// 	}
-// }
+func (c HeuristicConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
+	cp := map[string]interface{}{
+		"similarity_threshold": c.SimilarityThreshold,
+	}
+	if len(cp) == 0 {
+		cp = nil
+	}
+	return internalFramework.CloneFinderConfig{
+		MinCloneLength: c.MinCloneLength,
+		MinGroupPower:  c.MinGroupPower,
+		CustomParams:   cp,
+	}
+}
 
 type OpenAIConfig struct {
 	MinGroupPower int
