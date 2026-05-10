@@ -3,11 +3,8 @@ package internal
 import (
 	"math"
 	"regexp"
-	"sort"
 	"strings"
 	"unicode"
-
-	"github.com/PavelMkr/docline-new/internal/framework"
 )
 
 
