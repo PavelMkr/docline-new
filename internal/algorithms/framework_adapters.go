@@ -123,6 +123,93 @@ func (a *NGramAdapter) FindClones(text string, cfg framework.CloneFinderConfig) 
 	return groups, nil
 }
 
+// Heuristic
+type HeuristicModeAdapter struct{}
+
+func (a *HeuristicModeAdapter) Name() string {
+	return "heuristic"
+}
+
+func (a *HeuristicModeAdapter) Description() string {
+	return "Heuristic NLP duplicate finder based on token overlap"
+}
+
+func (a *HeuristicModeAdapter) FindClones(text string, cfg framework.CloneFinderConfig) ([]framework.CloneGroup, error) {
+	segments := splitTextIntoSentenceSegments(text)
+	if len(segments) == 0 {
+		return nil, nil
+	}
+
+	minCloneLength := defaultInt(cfg.MinCloneLength, 4)
+	threshold := getFloat(cfg.CustomParams, "similarity_threshold", 0.72)
+	if threshold <= 0 {
+		threshold = 0.72
+	}
+	if threshold > 1 {
+		threshold = 1
+	}
+
+	parent := make([]int, len(segments))
+	for i := range parent {
+		parent[i] = i
+	}
+
+	for i := 0; i < len(segments); i++ {
+		for j := i + 1; j < len(segments); j++ {
+			sim := jaccardSimilarity(segments[i].tokenFreq, segments[j].tokenFreq)
+			if sim >= threshold {
+				union(parent, i, j)
+			}
+		}
+	}
+
+	components := map[int][]int{}
+	for i := range segments {
+		root := find(parent, i)
+		components[root] = append(components[root], i)
+	}
+
+	groups := make([]framework.CloneGroup, 0, len(components))
+	for _, idxs := range components {
+		if len(idxs) < maxInt(defaultInt(cfg.MinGroupPower, 2), 2) {
+			continue
+		}
+
+		sort.Slice(idxs, func(i, j int) bool {
+			return segments[idxs[i]].startToken < segments[idxs[j]].startToken
+		})
+
+		fragments := make([]framework.TextFragment, 0, len(idxs))
+		for _, idx := range idxs {
+			seg := segments[idx]
+			if seg.tokenCount < minCloneLength {
+				continue
+			}
+			fragments = append(fragments, framework.TextFragment{
+				Content:  seg.text,
+				StartPos: seg.startToken,
+				EndPos:   seg.endToken,
+			})
+		}
+
+		if len(fragments) < maxInt(defaultInt(cfg.MinGroupPower, 2), 2) {
+			continue
+		}
+
+		groups = append(groups, framework.CloneGroup{
+			Fragments: fragments,
+			Power:     len(fragments),
+			Archetype: fragments[0].Content,
+			Metadata: map[string]interface{}{
+				"finder":               "heuristic-nlp",
+				"similarity_threshold": threshold,
+			},
+		})
+	}
+
+	return groups, nil
+}
+
 // RegisterCloneFinders registers all built-in clone finders in the given registry.
 func RegisterCloneFinders(reg *framework.PluginRegistry) error {
 	if err := reg.RegisterCloneFinder(&AutomaticModeAdapter{}); err != nil {
