@@ -98,7 +98,7 @@ func (a *NGramAdapter) FindClones(text string, cfg framework.CloneFinderConfig) 
 		MaxEditSlider:  getInt(cfg.CustomParams, "max_edit", 1),
 		MaxFuzzySlider: getInt(cfg.CustomParams, "max_fuzzy", 1),
 		// SourceLanguage: getString(cfg.CustomParams, "source_language", "english"),
-		FilePath:       getString(cfg.CustomParams, "file_path", ""),
+		FilePath: getString(cfg.CustomParams, "file_path", ""),
 	}
 
 	parts := splitTextIntoParts(text)
@@ -123,27 +123,27 @@ func (a *NGramAdapter) FindClones(text string, cfg framework.CloneFinderConfig) 
 	return groups, nil
 }
 
-type HeuristicModeAdapter struct{}
+// type HeuristicModeAdapter struct{}
 
-func (a *HeuristicModeAdapter) Name() string {
-	return "heuristic"
-}
+// func (a *HeuristicModeAdapter) Name() string {
+// 	return "heuristic"
+// }
 
-func (a *HeuristicModeAdapter) Description() string {
-	return "Heuristic n-gram based clone finder"
-}
+// func (a *HeuristicModeAdapter) Description() string {
+// 	return "Heuristic n-gram based clone finder"
+// }
 
-func (a *HeuristicModeAdapter) FindClones(text string, cfg framework.CloneFinderConfig) ([]framework.CloneGroup, error) {
-	data := HeuristicNgramFinderData{
-		ExtensionPointCheckbox: getBool(cfg.CustomParams, "extension_point_checkbox", false),
-		FilePath:               getString(cfg.CustomParams, "file_path", ""),
-	}
+// func (a *HeuristicModeAdapter) FindClones(text string, cfg framework.CloneFinderConfig) ([]framework.CloneGroup, error) {
+// 	data := HeuristicNgramFinderData{
+// 		ExtensionPointCheckbox: getBool(cfg.CustomParams, "extension_point_checkbox", false),
+// 		FilePath:               getString(cfg.CustomParams, "file_path", ""),
+// 	}
 
-	results := HeuristicNgramAnalysis(data, text, defaultInt(cfg.MinCloneLength, 2))
-	groups := convertNGramResultsToGroups(map[string][]string{"": results})
+// 	results := HeuristicNgramAnalysis(data, text, defaultInt(cfg.MinCloneLength, 2))
+// 	groups := convertNGramResultsToGroups(map[string][]string{"": results})
 
-	return groups, nil
-}
+// 	return groups, nil
+// }
 
 // RegisterCloneFinders registers all built-in clone finders in the given registry.
 func RegisterCloneFinders(reg *framework.PluginRegistry) error {
@@ -153,11 +153,14 @@ func RegisterCloneFinders(reg *framework.PluginRegistry) error {
 	if err := reg.RegisterCloneFinder(&InteractiveModeAdapter{}); err != nil {
 		return fmt.Errorf("register interactive finder: %w", err)
 	}
-	if err := reg.RegisterCloneFinder(&HeuristicModeAdapter{}); err != nil {
-		return fmt.Errorf("register heuristic finder: %w", err)
-	}
+	// if err := reg.RegisterCloneFinder(&HeuristicModeAdapter{}); err != nil {
+	// 	return fmt.Errorf("register heuristic finder: %w", err)
+	// }
 	if err := reg.RegisterCloneFinder(&NGramAdapter{}); err != nil {
 		return fmt.Errorf("register ngram finder: %w", err)
+	}
+	if err := reg.RegisterCloneFinder(&OpenAI{}); err != nil {
+		return fmt.Errorf("register openai fuzzy finder: %w", err)
 	}
 	return nil
 }

@@ -22,7 +22,7 @@ High-level scheme:
   - Interfaces: `CloneFinder`, `DocumentParser`, `DocumentConverter`, `ReportGenerator`, `TextTokenizer`, `Filter` (`interfaces.go`)
   - Domain types: `CloneGroup`, `TextFragment`, `CloneFinderConfig`, `ReportConfig`, `AnalysisResult`, `AnalysisStatistics` (`types.go`)
 - **Algorithms** (`internal/algorithms`):
-  - Real implementations: automatic / interactive / heuristic / ngram (`*_mode.go`, `ngram_duplicate.go`)
+  - Real implementations: automatic / interactive / openai / ngram (`*_mode.go`, `ngram_duplicate.go`)
   - Adapters for `CloneFinder`: `AutomaticModeAdapter`, `InteractiveModeAdapter`, `NGramAdapter` (`framework_adapters.go`)
 - **Document parser and converter** (`internal/report`):
   - `DocBookParser`, `NewDocBookParser` (`docbook_parser.go`)

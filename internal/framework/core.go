@@ -55,26 +55,26 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
     }
 
     // Heuristic mode: enforce .reformatted as the analysis source
-    if finderName == "heuristic" {
-        normalized := normalizeReformattedContent(content)
+    // if finderName == "heuristic" {
+    //     normalized := normalizeReformattedContent(content)
 
-        reformattedPath := filePath + ".reformatted"
-        if err := os.WriteFile(reformattedPath, []byte(normalized), 0o644); err != nil {
-            return nil, fmt.Errorf("write reformatted file: %w", err)
-        }
+    //     reformattedPath := filePath + ".reformatted"
+    //     if err := os.WriteFile(reformattedPath, []byte(normalized), 0o644); err != nil {
+    //         return nil, fmt.Errorf("write reformatted file: %w", err)
+    //     }
 
-        b, err := os.ReadFile(reformattedPath)
-        if err != nil {
-            return nil, fmt.Errorf("read reformatted file: %w", err)
-        }
-        content = string(b)
+    //     b, err := os.ReadFile(reformattedPath)
+    //     if err != nil {
+    //         return nil, fmt.Errorf("read reformatted file: %w", err)
+    //     }
+    //     content = string(b)
 
-        if finderConfig.CustomParams == nil {
-            finderConfig.CustomParams = map[string]interface{}{}
-        }
-        finderConfig.CustomParams["reformatted_file"] = reformattedPath
-        finderConfig.CustomParams["source_file"] = filePath
-    }
+    //     if finderConfig.CustomParams == nil {
+    //         finderConfig.CustomParams = map[string]interface{}{}
+    //     }
+    //     finderConfig.CustomParams["reformatted_file"] = reformattedPath
+    //     finderConfig.CustomParams["source_file"] = filePath
+    // }
 
     finder, err := f.registry.GetCloneFinder(finderName)
     if err != nil {
@@ -103,9 +103,9 @@ func (f *Framework) AnalyzeDocument(filePath string, finderName string, finderCo
     }
 
     // (optional) expose reformatted path on result metadata too
-    if finderName == "heuristic" {
-        result.Metadata["reformatted_file"] = filePath + ".reformatted"
-    }
+    // if finderName == "heuristic" {
+    //     result.Metadata["reformatted_file"] = filePath + ".reformatted"
+    // }
 
     return result, nil
 }

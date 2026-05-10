@@ -74,10 +74,10 @@ func (c NgramConfig) FinderType() string { return "ngram" }
 
 func (c NgramConfig) toInternal(filePath string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{
-		"max_edit":        c.MaxEdit,
-		"max_fuzzy":       c.MaxFuzzy,
+		"max_edit":  c.MaxEdit,
+		"max_fuzzy": c.MaxFuzzy,
 		// "source_language": c.SourceLanguage,
-		"file_path":       filePath,
+		"file_path": filePath,
 	}
 	if len(cp) == 0 {
 		cp = nil
@@ -90,24 +90,55 @@ func (c NgramConfig) toInternal(filePath string) internalFramework.CloneFinderCo
 }
 
 // Type-safe configuration for the "heuristic" finder.
-type HeuristicConfig struct {
-	MinCloneLength         int
-	ExtensionPointCheckbox bool
-	FilePath               string
+// type HeuristicConfig struct {
+// 	MinCloneLength         int
+// 	ExtensionPointCheckbox bool
+// 	FilePath               string
+// }
+
+// func (c HeuristicConfig) FinderType() string { return "heuristic" }
+
+// func (c HeuristicConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
+// 	cp := map[string]interface{}{
+// 		"extension_point_checkbox": c.ExtensionPointCheckbox,
+// 		"file_path":                c.FilePath,
+// 	}
+// 	if len(cp) == 0 {
+// 		cp = nil
+// 	}
+// 	return internalFramework.CloneFinderConfig{
+// 		MinCloneLength: c.MinCloneLength,
+// 		CustomParams:   cp,
+// 	}
+// }
+
+type OpenAIConfig struct {
+	MinGroupPower int
+	Provider      string
+	Model         string
+	Prompt        string
+	APIKey        string
+	BaseURL       string
+	Endpoint      string
+	TimeoutSec    int
 }
 
-func (c HeuristicConfig) FinderType() string { return "heuristic" }
+func (c OpenAIConfig) FinderType() string { return "openai" }
 
-func (c HeuristicConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
+func (c OpenAIConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
 	cp := map[string]interface{}{
-		"extension_point_checkbox": c.ExtensionPointCheckbox,
-		"file_path":                c.FilePath,
+		"provider":    c.Provider,
+		"model":       c.Model,
+		"prompt":      c.Prompt,
+		"base_url":    c.BaseURL,
+		"endpoint":    c.Endpoint,
+		"timeout_sec": c.TimeoutSec,
 	}
-	if len(cp) == 0 {
-		cp = nil
+	if c.APIKey != "" {
+		cp["openai_api_key"] = c.APIKey
 	}
 	return internalFramework.CloneFinderConfig{
-		MinCloneLength: c.MinCloneLength,
-		CustomParams:   cp,
+		MinGroupPower: c.MinGroupPower,
+		CustomParams:  cp,
 	}
 }

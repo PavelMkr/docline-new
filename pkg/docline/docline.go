@@ -29,7 +29,7 @@ type CloneFinderConfig struct {
 // The returned config may use CustomParams for mode-specific settings.
 type FinderModeConfig interface {
 	// FinderType returns the finder identifier used by the framework registry
-	// (built-in: "automatic", "interactive", "heuristic", "ngram").
+	// (built-in: "automatic", "interactive", "openai", "ngram").
 	FinderType() string
 	toInternal(filePath string) internalFramework.CloneFinderConfig
 }
