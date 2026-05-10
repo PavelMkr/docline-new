@@ -42,6 +42,7 @@ High-level scheme:
 - Rich Text Format (.rtf)
 - Markdown (.md)
 - Plain Text (.txt)
+- YAML (.yaml, .yml)
 - HTML (.html, .htm)
 
 *The actual "to DocBook" conversion is implemented using `pandoc` inside `internal/report.DocumentConverter`.

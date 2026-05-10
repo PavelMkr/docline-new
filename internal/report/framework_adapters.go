@@ -91,6 +91,9 @@ func RegisterDocumentPlugins(reg *framework.PluginRegistry) error {
 	if err := reg.RegisterDocumentParser(&DocBookParserAdapter{}); err != nil {
 		return fmt.Errorf("register docbook parser: %w", err)
 	}
+	if err := reg.RegisterDocumentParser(&YAMLParserAdapter{}); err != nil {
+		return fmt.Errorf("register yaml parser: %w", err)
+	}
 	if err := reg.RegisterDocumentConverter(NewPandocConverterAdapter()); err != nil {
 		return fmt.Errorf("register pandoc converter: %w", err)
 	}

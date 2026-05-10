@@ -87,6 +87,54 @@ func TestFramework_AnalyzeDocument_Automatic(t *testing.T) {
 	}
 }
 
+// TestFramework_AnalyzeDocument_YAML_AllBuiltInFinders ensures .yaml files are
+// read through the same document pipeline and can be analyzed by all local
+// built-in finders.
+func TestFramework_AnalyzeDocument_YAML_AllBuiltInFinders(t *testing.T) {
+	tmpDir := t.TempDir()
+	docPath := filepath.Join(tmpDir, "doc.yaml")
+
+	const doc = `rules:
+  - duplicate fragment here
+  - duplicate fragment here
+metadata:
+  owner: team`
+	if err := os.WriteFile(docPath, []byte(doc), 0o644); err != nil {
+		t.Fatalf("write temp yaml doc: %v", err)
+	}
+
+	cfg := &framework.Config{
+		ResultsDirectory:    tmpDir,
+		DefaultReportFormat: "html",
+		DefaultTokenizer:    "space",
+	}
+	fw := framework.NewFramework(cfg)
+
+	if err := framework.RegisterBuiltInPlugins(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterBuiltInPlugins: %v", err)
+	}
+	if err := rep.RegisterDocumentPlugins(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterDocumentPlugins: %v", err)
+	}
+	if err := alg.RegisterCloneFinders(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterCloneFinders: %v", err)
+	}
+
+	finders := []string{"automatic", "interactive", "ngram"}
+	for _, finder := range finders {
+		result, err := fw.AnalyzeDocument(docPath, finder, framework.CloneFinderConfig{
+			MinCloneLength: 2,
+			MinGroupPower:  2,
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeDocument for %s failed: %v", finder, err)
+		}
+		if result == nil {
+			t.Fatalf("expected non-nil result for finder %s", finder)
+		}
+	}
+}
+
 // TestFramework_GenerateReport verifies that GenerateReport produces an HTML file.
 func TestFramework_GenerateReport(t *testing.T) {
 	tmpDir := t.TempDir()
