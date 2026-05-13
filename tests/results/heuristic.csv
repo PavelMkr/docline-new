@@ -1,0 +1,121 @@
+﻿N tokens;Occurs times;Text
+3;2;structured, semantic markup
+7;2;There are several standards for such stylesheets:
+3;2;In &SGML,, the
+3;2;An Internal Subset
+3;2;controlled by the
+4;2;contains the Modular DocBook
+5;2;selects from among several alternatives:
+5;2;why, and to what effect
+11;2;document type declaration and the root element, the root element usually
+4;2;After you've written a
+7;2;The  and  values for the  attribute on
+4;6;0, and so on)
+8;2;If not, and the preceding test succeeded, something
+3;4;DocBook and &XML,
+10;2;It's also possible to provide additional declarations in a document
+4;2;The element in the
+7;7;The result will be something like this:
+3;2;used by DocBook
+5;2;If so, what are the
+3;2;missing end tag
+8;2;continues to meet the needs of its users
+4;2;Parameter entities are not
+4;2;s, es and a
+3;2;looks like this:
+11;2;under the terms of the GNU Free Documentation License, Version 1
+11;2;(part of) a document type definition that are stored in an
+3;2;What's on the
+7;2;Returns the value of the  attribute of
+3;2;The Unicode standard
+10;2;or any later version published by the Free Software Foundation,
+3;2;contains various stylesheets
+3;2;for more information
+10;4;If you are interested in future &XML, compatibility, input all
+7;2;Element, attribute, and other declarations that compose
+10;2;Permission is granted to copy, distribute and/or modify this document
+8;2;"quote ('), or a straight double quote ("")"
+6;2;immediately follows the document type declaration:
+8;2;These declarations form what is known as the
+5;2;Download and unpack the  distribution
+5;2;complex alternative to XML Schemas
+5;2;How to publish DocBook documents
+3;2;previous major release
+6;2;The  keyword allows you to specify
+9;2;“curly” quotes (“ and ”) in your editing tool
+3;2;Preserve all the
+5;2;That's the difference between 2
+6;2;public identifiers into system identifiers, i
+6;2;(s, ) and the elements they
+3;2;Parsing and validation
+6;2;This module declares and references the
+4;2;changes to generated files
+8;2;by placing them in the document type declaration:
+8;2;Did you use the  attribute on sections and/or
+4;2;GNU Free Documentation License
+5;4;A Fragment of a  Stylesheet
+5;5;14: Changes since version 2
+3;2;To do this,
+6;2;You can get the most up-to-date
+3;2;Attribute Default Values
+8;2;following sections describe the features of the prologue
+3;3;DocBook  Module V1
+6;2;I forgot to update the  for
+3;2;numeric character references
+3;2;For example, you
+4;2;Writing Your Own Driver
+6;2;summarizes the language codes for the
+11;2;This change log is slightly abbreviated, there were hundreds of uninteresting
+3;3;&SGML, and &XML,
+4;2;DocBook Instances as &XML,
+6;2;See ” later in this chapter
+4;5;Installing the DocBook DTD
+10;3;If you used the  common attribute, why, and to what
+11;2;If you are entering &SGML, using a text editor such as
+3;2;This placeholder is
+4;2;for the new element
+11;2;Processing instructions in &XML, begin and end with a question mark:
+11;2;When quoting attribute values, you can use either a straight single
+4;4;FIXME: write this section
+3;2;Removing Computer Inlines
+10;2;file referenced by the public or system identifier in the
+4;2;s are &SGML, documents
+3;2;contains DocBk &XML,
+7;2;entities were introduced in DocBook , they
+3;3;your customization layer
+9;2;Although comments and processing instructions may occur between the
+7;2;This module declares the elements that provide
+7;2;parameter entity  and associates it with the
+6;2;within the content of the element
+9;2;They're not allowed in &XML,, so don't add any
+4;3;A Brief Introduction to
+7;2;) In , this isn't the case,
+6;2;the document in an external entity
+3;2;file  as your
+4;3;Did you use s
+3;2;The languages supported
+8;2;Formal objects from , s, s and s
+4;2;version of DocBook is
+5;2;uses  to pull in the
+4;2;accessible over the Internet
+5;2;between the  and  entity declarations
+4;2;This line declares the
+6;2;Inserted in the middle of ,
+5;3;This command should silently produce
+4;2;If so, which ones
+3;2;Don't use the
+7;3;The  technical recommendation that defines &XML, 1
+5;2;Latin 1 character set is:
+7;2;That is the master stylesheet file that
+3;2;placeholders in DocBook
+14;2;An exclusion is used in a &DTD, to indicate that, within the element on
+9;2;component files it needs to assemble a complete stylesheet
+8;5;, , , , , , , and
+3;2;has gone wrong—
+4;2;If you are using
+4;2;A Document Type Declaration
+5;2;The Document (or Root) Element
+3;2;The DocBook Catalog
+12;2;in the notice that says that the Document is released under this
+6;2;Document Style Semantics and Specification Language
+7;2;You cannot place the root element of
