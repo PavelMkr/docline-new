@@ -91,33 +91,65 @@ func main() {
 If you need fine-grained control (custom registries/plugins), use the framework directly:
 
 ```go
-cfg := &framework.Config{
-    ResultsDirectory:    "./results",
-    DefaultReportFormat: "html",
-    DefaultTokenizer:    "space",
-    DefaultCloneFinder:  "automatic",
+package main
+
+import (
+	"log"
+	"os"
+
+	algorithms "github.com/PavelMkr/docline-new/internal/algorithms"
+	"github.com/PavelMkr/docline-new/internal/framework"
+	report "github.com/PavelMkr/docline-new/internal/report"
+)
+
+func main() {
+	cfg := &framework.Config{
+		ResultsDirectory:    "./results",
+		DefaultReportFormat: "html",
+		DefaultTokenizer:    "space",
+		DefaultCloneFinder:  "automatic",
+	}
+	fw := framework.NewFramework(cfg)
+
+	reg := fw.GetRegistry()
+
+	if err := framework.RegisterBuiltInPlugins(reg); err != nil {
+		log.Fatalf("register built-in plugins: %v", err)
+	}
+	if err := algorithms.RegisterCloneFinders(reg); err != nil {
+		log.Fatalf("register clone finders: %v", err)
+	}
+	if err := report.RegisterDocumentPlugins(reg); err != nil {
+		log.Fatalf("register document plugins: %v", err)
+	}
+	if err := report.RegisterReportGenerators(reg); err != nil {
+		log.Fatalf("register report generators: %v", err)
+	}
+
+	docPath := "example.xml"
+	if len(os.Args) > 1 {
+		docPath = os.Args[1]
+	}
+
+	result, err := fw.AnalyzeDocument(docPath, "automatic", framework.CloneFinderConfig{
+		MinCloneLength: 20,
+		MinGroupPower:  2,
+	})
+	if err != nil {
+		log.Fatalf("analyze document: %v", err)
+	}
+
+	if err := fw.GenerateReport(result, "html", "./results/report.html"); err != nil {
+		log.Fatalf("generate report: %v", err)
+	}
+
+	log.Println("Done: ./results/report.html")
 }
-fw := framework.NewFramework(cfg)
-
-reg := fw.GetRegistry()
-
-// 1. Register the basic framework utilities
-_ = framework.RegisterBuiltInPlugins(reg)
-
-// 2. Register built-in algorithms, a parser/converter, and report generators
-_ = algorithms.RegisterCloneFinders(reg)
-_ = report.RegisterDocumentPlugins(reg)
-_ = report.RegisterReportGenerators(reg)
-
-// 3. Start document analysis
-result, err := fw.AnalyzeDocument("example.xml", "automatic", framework.CloneFinderConfig{
-    MinCloneLength: 20,
-    MinGroupPower:  2,
-})
-
-// 4. Generate a report
-err = fw.GenerateReport(result, "html", "./results/report.html")
 ```
+
+And add into go.mod as:
+
+`replace github.com/PavelMkr/docline-new v0.0.0-unpublished => ../docline`
 
 ## Framework extension
 
