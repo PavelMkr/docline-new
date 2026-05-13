@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sort"
 
 	"github.com/PavelMkr/docline-new/internal/framework"
 )
