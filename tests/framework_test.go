@@ -1,8 +1,12 @@
 package internal
 
 import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	alg "github.com/PavelMkr/docline-new/internal/algorithms"
@@ -177,5 +181,126 @@ func TestFramework_GenerateReport(t *testing.T) {
 
 	if _, err := os.Stat(outPath); err != nil {
 		t.Fatalf("expected report file to exist, got: %v", err)
+	}
+}
+
+// TestFramework_GenerateReport_AllFormats checks html, csv, and json outputs are non-empty and json is valid.
+func TestFramework_GenerateReport_AllFormats(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := &framework.Config{ResultsDirectory: tmpDir, DefaultReportFormat: "html"}
+	fw := framework.NewFramework(cfg)
+	if err := framework.RegisterBuiltInPlugins(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterBuiltInPlugins: %v", err)
+	}
+	if err := alg.RegisterCloneFinders(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterCloneFinders: %v", err)
+	}
+	if err := rep.RegisterDocumentPlugins(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterDocumentPlugins: %v", err)
+	}
+	if err := rep.RegisterReportGenerators(fw.GetRegistry()); err != nil {
+		t.Fatalf("RegisterReportGenerators: %v", err)
+	}
+
+	longDup := strings.TrimSpace(strings.Repeat("tokword ", 20)) // >10 tokens; must appear in CSV like HTML/JSON
+	result := &framework.AnalysisResult{
+		Groups: []framework.CloneGroup{
+			{
+				Fragments: []framework.TextFragment{
+					{Content: "a b c", StartPos: 0, EndPos: 3},
+					{Content: "a b c", StartPos: 10, EndPos: 13},
+				},
+				Power:     2,
+				Archetype: "a b c",
+			},
+			{
+				Fragments: []framework.TextFragment{
+					{Content: longDup, StartPos: 20, EndPos: 40},
+					{Content: longDup, StartPos: 100, EndPos: 120},
+				},
+				Power:     2,
+				Archetype: longDup,
+			},
+		},
+		Metadata: map[string]interface{}{"source_file": "smoke.txt"},
+	}
+
+	wantRows := 0
+	for _, g := range result.Groups {
+		if len(g.Fragments) > 0 {
+			wantRows++
+		}
+	}
+
+	for _, format := range []string{"html", "csv", "json"} {
+		out := filepath.Join(tmpDir, "out."+format)
+		if err := fw.GenerateReport(result, format, out); err != nil {
+			t.Fatalf("format %s: %v", format, err)
+		}
+		st, err := os.Stat(out)
+		if err != nil {
+			t.Fatalf("format %s stat: %v", format, err)
+		}
+		if st.Size() == 0 {
+			t.Fatalf("format %s: empty file", format)
+		}
+		if format == "json" {
+			b, err := os.ReadFile(out)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]interface{}
+			if err := json.Unmarshal(b, &payload); err != nil {
+				t.Fatalf("format json invalid: %v", err)
+			}
+			groups, ok := payload["groups"].([]interface{})
+			if !ok {
+				t.Fatalf("json groups type %T", payload["groups"])
+			}
+			if len(groups) != wantRows {
+				t.Fatalf("json groups len %d want %d", len(groups), wantRows)
+			}
+		}
+	}
+
+	csvPath := filepath.Join(tmpDir, "out.csv")
+	raw, err := os.ReadFile(csvPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw = bytes.TrimPrefix(raw, []byte{0xEF, 0xBB, 0xBF})
+	cr := csv.NewReader(bytes.NewReader(raw))
+	cr.Comma = ';'
+	recs, err := cr.ReadAll()
+	if err != nil {
+		t.Fatalf("csv read: %v", err)
+	}
+	if len(recs) != wantRows+1 {
+		t.Fatalf("csv rows %d want header+%d data rows", len(recs), wantRows)
+	}
+}
+
+// Regression: GenerateReport must not panic when Metadata is nil or source_file is absent (see examples/custom_report).
+func TestFramework_GenerateReport_NoSourceFileInMetadata(t *testing.T) {
+	tmpDir := t.TempDir()
+	fw := framework.NewFramework(&framework.Config{ResultsDirectory: tmpDir})
+	if err := framework.RegisterBuiltInPlugins(fw.GetRegistry()); err != nil {
+		t.Fatal(err)
+	}
+	if err := rep.RegisterReportGenerators(fw.GetRegistry()); err != nil {
+		t.Fatal(err)
+	}
+	result := &framework.AnalysisResult{
+		Groups: []framework.CloneGroup{
+			{Fragments: []framework.TextFragment{{Content: "x y", StartPos: 0, EndPos: 2}, {Content: "x y", StartPos: 5, EndPos: 7}}, Power: 2, Archetype: "x y"},
+		},
+		Metadata: nil,
+	}
+	out := filepath.Join(tmpDir, "r.html")
+	if err := fw.GenerateReport(result, "html", out); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatal(err)
 	}
 }

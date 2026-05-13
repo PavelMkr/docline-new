@@ -199,9 +199,16 @@ func (f *Framework) GenerateReport(result *AnalysisResult, format string, output
 	// Expose statistics for generators (e.g. JSON payload "stats").
 	settings["stats"] = result.Statistics
 
+	sourceFile := ""
+	if result.Metadata != nil {
+		if s, ok := result.Metadata["source_file"].(string); ok {
+			sourceFile = s
+		}
+	}
+
 	reportConfig := ReportConfig{
 		Title:      "Clone Analysis Report",
-		SourceFile: result.Metadata["source_file"].(string),
+		SourceFile: sourceFile,
 		Settings:   settings,
 		OutputDir:  filepath.Dir(outputPath),
 	}

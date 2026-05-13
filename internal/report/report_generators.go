@@ -132,9 +132,9 @@ func (j *JSONReportGenerator) Generate(groups []framework.CloneGroup, cfg framew
 // CSVReportGenerator implements framework.ReportGenerator for CSV output
 // similar in spirit to the old WriteShortTermsCSV helper.
 type CSVReportGenerator struct {
-	// MaxTokens limits fragment length to be included; 0 means no limit.
+	// MaxTokens limits fragment length (first fragment token count); 0 means no limit.
 	MaxTokens int
-	// MinOccurs specifies minimal number of fragments per group.
+	// MinOccurs is the minimum number of fragments per group required to emit a row; 0 means no minimum.
 	MinOccurs int
 }
 
@@ -169,27 +169,22 @@ func (c *CSVReportGenerator) Generate(groups []framework.CloneGroup, cfg framewo
 		return fmt.Errorf("write header: %w", err)
 	}
 
-	maxTokens := c.MaxTokens
-	if maxTokens == 0 {
-		maxTokens = 10
-	}
-	minOccurs := c.MinOccurs
-	if minOccurs == 0 {
-		minOccurs = 2
-	}
-
 	for _, g := range groups {
 		if len(g.Fragments) == 0 {
 			continue
 		}
 		ntoks := len(strings.Fields(g.Fragments[0].Content))
-		if ntoks <= maxTokens && len(g.Fragments) >= minOccurs {
-			txt := strings.ReplaceAll(g.Fragments[0].Content, "\n", " ")
-			txt = strings.ReplaceAll(txt, ";", ",")
-			record := []string{fmt.Sprint(ntoks), fmt.Sprint(len(g.Fragments)), txt}
-			if err := w.Write(record); err != nil {
-				return fmt.Errorf("write record: %w", err)
-			}
+		if c.MaxTokens > 0 && ntoks > c.MaxTokens {
+			continue
+		}
+		if c.MinOccurs > 0 && len(g.Fragments) < c.MinOccurs {
+			continue
+		}
+		txt := strings.ReplaceAll(g.Fragments[0].Content, "\n", " ")
+		txt = strings.ReplaceAll(txt, ";", ",")
+		record := []string{fmt.Sprint(ntoks), fmt.Sprint(len(g.Fragments)), txt}
+		if err := w.Write(record); err != nil {
+			return fmt.Errorf("write record: %w", err)
 		}
 	}
 
@@ -375,7 +370,8 @@ func RegisterReportGenerators(reg *framework.PluginRegistry) error {
 	if err := reg.RegisterReportGenerator(&JSONReportGenerator{}); err != nil {
 		return fmt.Errorf("register json report generator: %w", err)
 	}
-	if err := reg.RegisterReportGenerator(&CSVReportGenerator{MaxTokens: 3, MinOccurs: 2}); err != nil {
+	// Default CSV lists every non-empty clone group (same set as HTML/JSON). Use MaxTokens/MinOccurs to narrow export if needed.
+	if err := reg.RegisterReportGenerator(&CSVReportGenerator{}); err != nil {
 		return fmt.Errorf("register csv report generator: %w", err)
 	}
 	return nil
