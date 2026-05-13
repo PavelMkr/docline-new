@@ -121,6 +121,10 @@ type OpenAIConfig struct {
 	BaseURL       string
 	Endpoint      string
 	TimeoutSec    int
+	// ChunkMaxRunes splits large documents into several API requests (0 = use default 48000).
+	ChunkMaxRunes int
+	// ChunkOverlapRunes overlap between chunks to catch repeats on boundaries (0 = default 2000).
+	ChunkOverlapRunes int
 }
 
 func (c OpenAIConfig) FinderType() string { return "openai" }
@@ -136,6 +140,12 @@ func (c OpenAIConfig) toInternal(_ string) internalFramework.CloneFinderConfig {
 	}
 	if c.APIKey != "" {
 		cp["openai_api_key"] = c.APIKey
+	}
+	if c.ChunkMaxRunes > 0 {
+		cp["openai_chunk_max_runes"] = c.ChunkMaxRunes
+	}
+	if c.ChunkOverlapRunes > 0 {
+		cp["openai_chunk_overlap_runes"] = c.ChunkOverlapRunes
 	}
 	return internalFramework.CloneFinderConfig{
 		MinGroupPower: c.MinGroupPower,
