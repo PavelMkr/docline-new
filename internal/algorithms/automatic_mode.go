@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/PavelMkr/docline-new/internal/framework"
@@ -81,9 +82,16 @@ func findClones(text string, settings AutomaticModeSettings) []framework.CloneGr
 		}
 	}
 
-	// Build groups
+	// Build groups in stable key order (map iteration order in Go is not specified).
+	keys := make([]string, 0, len(candidates))
+	for k := range candidates {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	var groups []framework.CloneGroup
-	for archetype, frags := range candidates {
+	for _, archetype := range keys {
+		frags := candidates[archetype]
 		if len(frags) < 2 {
 			continue
 		}
