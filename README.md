@@ -1,6 +1,8 @@
 # Duplicate Finder Framework
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/PavelMkr/docline-new)
+[![Go Reference](https://pkg.go.dev/badge/github.com/PavelMkr/docline-new.svg)](https://pkg.go.dev/github.com/PavelMkr/docline-new)
 ![CI](https://github.com/PavelMkr/docline-new/actions/workflows/main.yml/badge.svg)
+![CrossPlatformTest](https://github.com/PavelMkr/docline-new/actions/workflows/crossplatform_test.yaml/badge.svg)
 
 **Duplicate Finder Framework** — a clone-finding and documentation refactoring **framework** inside the DocLine project.
 
