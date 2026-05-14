@@ -117,8 +117,7 @@ func TestDocBookParser_ParseDocBook(t *testing.T) {
 }
 
 func TestDocBookParser_RealDocBookFile(t *testing.T) {
-	// path to DocBook in test folder
-	docbookFile := filepath.Join("test", "DocBook_Definitive_Guide.xml")
+	docbookFile := filepath.Join("documentations", "DocBook_Definitive_Guide.xml")
 
 	// check that file exists
 	if _, err := os.Stat(docbookFile); os.IsNotExist(err) {
@@ -167,7 +166,7 @@ func TestDocBookParser_RealDocBookFile(t *testing.T) {
 
 func TestDocBookParser_LinuxKernelDoc(t *testing.T) {
 	// path to Linux Kernel documentation file
-	kernelDocFile := filepath.Join("test", "Linux_Kernel_Documentation.xml")
+	kernelDocFile := filepath.Join("documentations", "Linux_Kernel_Documentation.xml")
 
 	// check that file exists
 	if _, err := os.Stat(kernelDocFile); os.IsNotExist(err) {
@@ -208,22 +207,19 @@ func TestDocBookParser_LinuxKernelDoc(t *testing.T) {
 
 func TestDocBookParser_FullRealDocBookFile(t *testing.T) {
 	// path to DocBook in test folder
-	docbookFile := filepath.Join("test", "DocBook_Definitive_Guide.xml")
+	docbookFile := filepath.Join("documentations", "DocBook_Definitive_Guide.xml")
 
-	// check that file exists
 	if _, err := os.Stat(docbookFile); os.IsNotExist(err) {
 		t.Skipf("DocBook file not found: %s", docbookFile)
 		return
 	}
 
-	// open file
 	file, err := os.Open(docbookFile)
 	if err != nil {
 		t.Fatalf("Failed to open DocBook file: %v", err)
 	}
 	defer file.Close()
 
-	// create parser and parse file
 	parser := rep.NewDocBookParser()
 	segments, err := parser.ParseDocBook(file)
 
